@@ -5,16 +5,6 @@ import time
 import pandas as pd
 
 
-def write(entry, file_desc, ofs=None):
-    """Write entry to file or stdout"""
-    if ofs is not None:
-        entry = entry.replace(",", ofs)
-    if file_desc == sys.stdout:
-        print(entry)
-    else:
-        file_desc.write(entry)
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Sample a csv file by geohash and output to stdout or file (default: stdout)"
@@ -84,7 +74,6 @@ if __name__ == "__main__":
 
     # count entries per geohash
     count_per_geohash = df.groupby("geohash").count()
-    # df['count'] = df.groupby('geohash')['geohash'].transform('count')
 
     # randomly drop "sample_percentage" of entries per geohash
     df = df.groupby("geohash").apply(lambda x: x.sample(frac=args.sample_percentage))
@@ -110,11 +99,6 @@ if __name__ == "__main__":
             )
 
             time.sleep(args.sleep)
-
-        # for entry in df:
-        #    write(entry, output, ofs=args.OFS)
-
-        #    time.sleep(args.sleep)
 
         # close file if output is not stdout
         if output != sys.stdout:
