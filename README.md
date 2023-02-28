@@ -158,3 +158,12 @@ sudo ~/anaconda3/bin/jupyter-kernelspec install ./sparkmagic/kernels/sparkrkerne
   - `unzip ~/Downloads/livy-[version...].zip`
   > To start Livy, run `~/apache-livy[version...]/bin/livy-server start`
 
+
+
+## Memo to Use the Environment
+List conda environments: `conda env list`.
+Start a conda env: `conda activate <ENV_NAME>` (empty for base)
+Deactivate a conda env: `conda deactivate`
+
+Start Jupyter: run `jupyter notebook` after activating the conda environment (like base env)
+To start Livy: run `~/apache-livy[version...]/bin/livy-server start`
