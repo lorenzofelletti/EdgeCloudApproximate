@@ -1,6 +1,4 @@
-<<<<<<< HEAD
 .vscode
 /.ipynb_checkpoints/
-=======
-.ipynb_checkpoints/
->>>>>>> e407186 (fixed gitignore)
+venv/
+target/
