@@ -159,6 +159,10 @@ sudo ~/anaconda3/bin/jupyter-kernelspec install ./sparkmagic/kernels/sparkrkerne
   > To start Livy, run `~/apache-livy[version...]/bin/livy-server start`
 
 
+### Install Maven
+Install maven with: `sudo apt install maven`.
+Then check the installation with `mvn -version`.
+
 
 ## Memo to Use the Environment
 List conda environments: `conda env list`.
