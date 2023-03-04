@@ -4,13 +4,10 @@ package com.unibo.beans;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
- *
- * @author: Isam Al Jawarneh
- * @date: 2021/1/1
+ * @author : Isam Al Jawarneh
+ * @date : 2021/1/1
  */
 public class Nyc {
-
-
     @JsonFormat
     private String vendorId;
 
@@ -23,10 +20,10 @@ public class Nyc {
     @JsonFormat
     private double Trip_distance;
 
-    //@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
-    //private Date ts;
+    public String getDriver_id() {
+        return vendorId;
+    }
 
-public String getDriver_id(){return vendorId;}
     public Nyc() {
     }
 

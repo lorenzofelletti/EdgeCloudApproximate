@@ -9,7 +9,7 @@ import java.util.stream.Stream;
  * @author: Isam Al Jawarneh
  * @date: 12/03/2021
  * run: mvn clean package
- *
+ * <p>
  * java -jar saosKafkaProducer-1.0-SNAPSHOT.jar
  * java -jar saosKafkaProducer-1.0-SNAPSHOT.jar shenzhen spatial1 localhost:9092 /home/isam/Desktop/spatial/data/china/points/guang.csv 1
  * java -jar saosKafkaProducer-1.0-SNAPSHOT.jar shenzhen spatial1 localhost:9092 /home/isam/Desktop/spatial/data/china/datacsv/points2.csv 1
@@ -17,54 +17,44 @@ import java.util.stream.Stream;
  * java -jar kafka-producer-consumer.jar shenzhen spatial1 wn0-skafka.j5rjzygn4qce1gsf4rcdijhweg.fx.internal.cloudapp.net:9092,wn1-skafka.j5rjzygn4qce1gsf4rcdijhweg.fx.internal.cloudapp.net:9092 /home/isam/guang.csv 1
  */
 public class SendMessageApplication {
-
     public static void main(String[] args) throws Exception {
-
-        if(args.length < 5) {
+        if (args.length < 5) {
             usage();
+            System.exit(1);
         }
 
+        // data type (e.g. shenzen)
+        String data = args[0];
         // Get the brokers
         String topicName = args[1];
         String brokers = args[2];
         String path = args[3];
-        String data = args[0];
-        int time =Integer.parseInt(args[4]);
+        // time
+        int time = Integer.parseInt(args[4]);
 
-        switch(args[0].toLowerCase()) {
-
+        switch (data.toLowerCase()) {
             case "nyc":
                 Stream.generate(new NYCsvReader(path))
                         .sequential()
-                .forEachOrdered(new KafkaProducer(topicName, brokers,time));
+                        .forEachOrdered(new KafkaProducer(topicName, brokers, time));
                 break;
             case "shenzhen":
                 Stream.generate(new shenzhenCSVreader(path))
                         .sequential()
-                        .forEachOrdered(new KafkaProducerShenzhen(topicName, brokers,time));
-
+                        .forEachOrdered(new KafkaProducerShenzhen(topicName, brokers, time));
                 break;
+            default:
+                System.out.println("Error: Unsupported data type.");
+                usage();
+                System.exit(2);
         }
-        //String path = "/home/isam/Desktop/spatial/data/NYC_trips1/nyc.csv";
-        //String path = "/home/isam/Desktop/spatial/data/china/points/guang.csv";
-
-        // kafka topic
-        //String kafka_topic = "spatial";
-        //String kafka_topic = "spatial1";
-
-        // kafka borker
-        //String kafka_broker = "localhost:9092";
-
-        //String kafka_broker = "wn0-skafka.j5rjzygn4qce1gsf4rcdijhweg.fx.internal.cloudapp.net:9092,wn1-skafka.j5rjzygn4qce1gsf4rcdijhweg.fx.internal.cloudapp.net:9092";
-
-
-
     }
 
     // Display usage
     public static void usage() {
         System.out.println("Usage:");
-        System.out.println("kafka-example.jar <producer|consumer|describe|create|delete> <topicName> brokerhosts [groupid]");
-        System.exit(1);
+        System.out.println("java -jar <JAR_NAME>.jar <data> <topic> <broker> <path_to_csv> <time>");
+        System.out.println("Example:");
+        System.out.println("java -jar <JAR_NAME>.jar shenzhen spatial1 localhost:9092 /home/user/path/to/csv/data.csv 1");
     }
 }

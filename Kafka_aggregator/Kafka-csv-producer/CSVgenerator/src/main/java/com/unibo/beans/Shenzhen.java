@@ -18,18 +18,16 @@
 
 package com.unibo.beans;
 
-        import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 //import java.util.Date;
 
 /**
- * @Description: Shenzhen JSON Object
- * @author: Isam Al Jawarneh
- * @date: 2021/7/2
+ * @Description : Shenzhen JSON Object
+ * @author : Isam Al Jawarneh
+ * @date : 2021/7/2
  */
 public class Shenzhen {
-
-
     @JsonFormat
     private String id;
 
@@ -45,20 +43,18 @@ public class Shenzhen {
     @JsonFormat
     private Double speed;
 
-    //@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
-    //private Date ts;
+    public String getDriver_id() {
+        return id;
+    }
 
-    public String getDriver_id(){return id;}
     public Shenzhen() {
     }
 
-    public Shenzhen(String id, double lat, double lon,String time,double speed) {
+    public Shenzhen(String id, double lat, double lon, String time, double speed) {
         this.id = id;
         this.lat = lat;
         this.lon = lon;
         this.time = time;
         this.speed = speed;
-
-
     }
 }
