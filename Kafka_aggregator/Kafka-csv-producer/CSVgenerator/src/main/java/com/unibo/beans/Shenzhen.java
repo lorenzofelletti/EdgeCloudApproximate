@@ -1,5 +1,3 @@
-
-
 /*
  * Copyright 2019 Ververica GmbH
  *
@@ -19,8 +17,6 @@
 package com.unibo.beans;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-
-//import java.util.Date;
 
 /**
  * @Description : Shenzhen JSON Object

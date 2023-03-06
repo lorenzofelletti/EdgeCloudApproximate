@@ -1,13 +1,11 @@
-
-
 package com.unibo.kafkaProducerPack;
 
 import java.util.stream.Stream;
 
 /**
- * @Description:
- * @author: Isam Al Jawarneh
- * @date: 12/03/2021
+ * @Description :
+ * @author : Isam Al Jawarneh
+ * @date : 12/03/2021
  * run: mvn clean package
  * <p>
  * java -jar saosKafkaProducer-1.0-SNAPSHOT.jar

@@ -8,7 +8,6 @@ import java.io.IOException;
 
 
 public class JsonDeserializer<T> {
-
     private final Class<T> recordClazz;
     private final ObjectMapper jsonMapper;
 

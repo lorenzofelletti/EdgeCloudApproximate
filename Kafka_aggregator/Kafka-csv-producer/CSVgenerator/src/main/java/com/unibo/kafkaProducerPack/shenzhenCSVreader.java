@@ -9,12 +9,11 @@ import java.util.NoSuchElementException;
 import java.util.function.Supplier;
 
 /**
- * @Description:
- * @author: Isam Al Jawarneh
- * @date: 2021/04/2
+ * @Description :
+ * @author : Isam Al Jawarneh
+ * @date : 2021/04/2
  */
 public class shenzhenCSVreader implements Supplier<Shenzhen> {
-
     private final String filePath;
     private CsvReader csvReader;
 
@@ -36,14 +35,9 @@ public class shenzhenCSVreader implements Supplier<Shenzhen> {
             if(csvReader.readRecord()) {
                 csvReader.getRawRecord();
                 shenzhen = new Shenzhen(
-
-
-
                         csvReader.get(0),
                         Double.valueOf(csvReader.get(1)),
                         Double.valueOf(csvReader.get(2)), csvReader.get(3),  Double.valueOf(csvReader.get(4))
-
-                        //,new Date(Long.valueOf(csvReader.get(4))*1000L)
                 );
             }
         } catch (IOException e) {

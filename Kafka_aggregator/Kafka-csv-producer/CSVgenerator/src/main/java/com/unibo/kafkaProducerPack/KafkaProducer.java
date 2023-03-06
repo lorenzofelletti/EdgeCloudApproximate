@@ -11,12 +11,11 @@ import java.util.Properties;
 import java.util.function.Consumer;
 
 /**
- * @Description:
- * @author: Isam Al Jawarneh
- * @date: 2021/04/2
+ * @Description
+ * @author Isam Al Jawarneh
+ * @date 2021/04/2
  */
 public class KafkaProducer implements Consumer<Nyc> {
-
     private final String topic;
     private final org.apache.kafka.clients.producer.KafkaProducer<byte[], byte[]> producer;
     private final int sleepTime;
@@ -26,7 +25,7 @@ public class KafkaProducer implements Consumer<Nyc> {
     public KafkaProducer(String kafkaTopic, String kafkaBrokers, int time) {
         this.topic = kafkaTopic;
         this.producer = new org.apache.kafka.clients.producer.KafkaProducer<>(createKafkaProperties(kafkaBrokers));
-this .sleepTime = time;
+        this .sleepTime = time;
         this.serializer = new JsonSerializer<>();
     }
 
@@ -61,5 +60,4 @@ this .sleepTime = time;
         kafkaProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getCanonicalName());
         return kafkaProps;
     }
-
 }
