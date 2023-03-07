@@ -3,9 +3,9 @@ package com.unibo.kafkaProducerPack;
 import java.util.stream.Stream;
 
 /**
- * @Description :
- * @author : Isam Al Jawarneh
- * @date : 12/03/2021
+ * @author Isam Al Jawarneh
+ * @Description Main application sending to Kafka topic data read from a csv file
+ * @date 12/03/2021
  * run: mvn clean package
  * <p>
  * java -jar saosKafkaProducer-1.0-SNAPSHOT.jar
@@ -32,12 +32,12 @@ public class SendMessageApplication {
 
         switch (data.toLowerCase()) {
             case "nyc":
-                Stream.generate(new NYCsvReader(path))
+                Stream.generate(new NycCsvReader(path))
                         .sequential()
                         .forEachOrdered(new KafkaProducer(topicName, brokers, time));
                 break;
             case "shenzhen":
-                Stream.generate(new shenzhenCSVreader(path))
+                Stream.generate(new ShenzhenCsvReader(path))
                         .sequential()
                         .forEachOrdered(new KafkaProducerShenzhen(topicName, brokers, time));
                 break;
@@ -48,7 +48,9 @@ public class SendMessageApplication {
         }
     }
 
-    // Display usage
+    /**
+     * Display usage
+     */
     public static void usage() {
         System.out.println("Usage:");
         System.out.println("java -jar <JAR_NAME>.jar <data> <topic> <broker> <path_to_csv> <time>");

@@ -1,6 +1,6 @@
 
 
-package com.unibo.sede;
+package com.unibo.serde;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 

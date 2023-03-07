@@ -4,8 +4,8 @@ package com.unibo.beans;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
- * @author : Isam Al Jawarneh
- * @date : 2021/1/1
+ * @author Isam Al Jawarneh
+ * @date 2021/1/1
  */
 public class Nyc {
     @JsonFormat

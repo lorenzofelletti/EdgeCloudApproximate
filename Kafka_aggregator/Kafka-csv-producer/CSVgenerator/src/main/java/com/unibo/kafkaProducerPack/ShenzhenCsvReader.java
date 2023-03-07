@@ -13,11 +13,11 @@ import java.util.function.Supplier;
  * @author : Isam Al Jawarneh
  * @date : 2021/04/2
  */
-public class shenzhenCSVreader implements Supplier<Shenzhen> {
+public class ShenzhenCsvReader implements Supplier<Shenzhen> {
     private final String filePath;
     private CsvReader csvReader;
 
-    public shenzhenCSVreader(String filePath) throws IOException {
+    public ShenzhenCsvReader(String filePath) throws IOException {
 
         this.filePath = filePath;
         try {

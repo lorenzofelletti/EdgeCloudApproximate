@@ -1,7 +1,7 @@
 package com.unibo.kafkaProducerPack;
 
 import com.unibo.beans.Shenzhen;
-import com.unibo.sede.JsonSerializer;
+import com.unibo.serde.JsonSerializer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
@@ -10,9 +10,9 @@ import java.util.Properties;
 import java.util.function.Consumer;
 
 /**
- * @Description :
- * @author : Isam Al Jawarneh
- * @date : 2021/04/2
+ * @Description
+ * @author Isam Al Jawarneh
+ * @date 2021/04/2
  */
 public class KafkaProducerShenzhen implements Consumer<Shenzhen> {
     private final String topic;

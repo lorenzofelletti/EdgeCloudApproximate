@@ -1,5 +1,5 @@
 
-package com.unibo.sede;
+package com.unibo.serde;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

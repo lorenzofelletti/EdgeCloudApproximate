@@ -19,9 +19,9 @@ package com.unibo.beans;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
- * @Description : Shenzhen JSON Object
- * @author : Isam Al Jawarneh
- * @date : 2021/7/2
+ * @author Isam Al Jawarneh
+ * @Description Shenzhen JSON Object
+ * @date 2021/7/2
  */
 public class Shenzhen {
     @JsonFormat

@@ -1,18 +1,18 @@
-
 package com.unibo.kafkaProducerPack;
 
 import com.unibo.beans.Nyc;
-import com.unibo.sede.JsonSerializer;
+import com.unibo.serde.JsonSerializer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 
+import java.util.Arrays;
 import java.util.Properties;
 import java.util.function.Consumer;
 
 /**
- * @Description
  * @author Isam Al Jawarneh
+ * @Description
  * @date 2021/04/2
  */
 public class KafkaProducer implements Consumer<Nyc> {
@@ -25,7 +25,7 @@ public class KafkaProducer implements Consumer<Nyc> {
     public KafkaProducer(String kafkaTopic, String kafkaBrokers, int time) {
         this.topic = kafkaTopic;
         this.producer = new org.apache.kafka.clients.producer.KafkaProducer<>(createKafkaProperties(kafkaBrokers));
-        this .sleepTime = time;
+        this.sleepTime = time;
         this.serializer = new JsonSerializer<>();
     }
 
@@ -35,22 +35,23 @@ public class KafkaProducer implements Consumer<Nyc> {
         byte[] data = serializer.toJSONBytes(record);
         byte[] key = record.getDriver_id().getBytes();
         //
-        ProducerRecord<byte[], byte[]> kafkaRecord = new ProducerRecord<>(topic,key, data);
+        ProducerRecord<byte[], byte[]> kafkaRecord = new ProducerRecord<>(topic, key, data);
         //
         producer.send(kafkaRecord);
-        System.out.println("key" + kafkaRecord.key().toString());
+        System.out.println("key" + Arrays.toString(kafkaRecord.key()));
 
         // sleeping for sometime
         try {
             Thread.sleep(sleepTime);
-        }catch(InterruptedException e){
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
     /**
-     * kafka
-     * @param brokers  brokers used for connection.
+     * Creates Kafka producer properties
+     *
+     * @param brokers brokers used for connection.
      * @return kafka producer config.
      */
     private static Properties createKafkaProperties(String brokers) {
