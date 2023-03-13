@@ -18,7 +18,6 @@ The tools we will use for big data processing are Spark and Kafka running on a U
 ### Install Java, Spark, and Scala
 
 - First, if you haven't done it, run `sudo apt-get update` and `sudo apt-get upgrade`
-- 
 - Install *Java*
   - `sudo apt-get install openjdk-8-jdk`
   - if `echo $JAVA_HOME` returns empty`
@@ -58,11 +57,13 @@ Download Intellij Idea from [here](https://www.jetbrains.com/idea/download/#sect
 
 ### Install Kafka
 - Create Kafka user
+  - the last command changes the default shell for kafka to bash, which is more "comfortable" than sh
 ```Bash
 sudo useradd kafka -m
 sudo passwd kafka
 sudo adduser kafka sudo
 sudo getent group sudo
+sudo usermod --shell /bin/bash kafka
 ```
 - Switch to Kafka user
   - `su -l kafka`
@@ -109,7 +110,7 @@ Restart=on-abnormal
 [Install]
 WantedBy=multi-user.target
 ```
-- start kafka with `sudo systemctl start kafka`
+- Start kafka with `sudo systemctl start kafka`
 - To check if kafka is running, run `sudo systemctl status kafka`
 - (Optional) To start kafka on boot
   - `sudo journalctl -u kafka`
@@ -139,15 +140,15 @@ Install *Anaconda3* (version: Anaconda3-2020.02-Linux-x86_64.sh)
 > The default environment is called `base`, which you can omit.
 > Without activating the environment, you can't use `jupyter`.
 
-#### Install Sparkmagic
+### Install Sparkmagic
 Install sparkmagic
-- run `pip install sparkmagic`
-- make sure ipywidgets is correctly installed
+- Run `pip install sparkmagic`
+- Make sure ipywidgets is correctly installed
   - run `jupyter nbextension enable --py --sys-prefix widgetsnbextension`
-- to check your sparkmagic version, run `pip show sparkmagic`
-- go to the folder shown in the output of the above command beside `Location:`
+- To check your sparkmagic version, run `pip show sparkmagic`
+- Go to the folder shown in the output of the above command beside `Location:`
   - e.g. `/home/[username]/anaconda3/lib/python3.7/site-packages/`
-- then run the following commands 
+- Then run the following commands 
 ```
 sudo ~/anaconda3/bin/jupyter-kernelspec install ./sparkmagic/kernels/sparkkernel
 sudo ~/anaconda3/bin/jupyter-kernelspec install ./sparkmagic/kernels/pysparkkernel
@@ -171,3 +172,7 @@ Deactivate a conda env: `conda deactivate`
 
 Start Jupyter: run `jupyter notebook` after activating the conda environment (like base env)
 To start Livy: run `~/apache-livy[version...]/bin/livy-server start`
+
+## Network Setup
+The setup includes, other than a VM with the setup described above, also other VMs, acting as Kafka producers, and with a simpler setup. The setup of these lighter VMs will be described later.
+The VMs communicate thanks to a network setup described [here](Network.md).
