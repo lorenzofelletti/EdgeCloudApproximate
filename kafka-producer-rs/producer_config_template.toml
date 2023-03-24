@@ -1,0 +1,8 @@
+[kafka]
+brokers = "IP_ADDR:9092"
+
+[data]
+source = "/home/USERNAME/EdgeCloudApproximate/data/china/mobility/guang.csv"
+msg_sleep_in_ms = 1
+chunk_size = 300000
+chunk_sleep_in_ms = 300
