@@ -1,5 +1,5 @@
 [kafka]
-brokers = "IP_ADDR:9092"
+brokers = [ "IP_ADDR:9092" ]
 
 [data]
 source = "/home/USERNAME/EdgeCloudApproximate/data/china/mobility/guang.csv"
