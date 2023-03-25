@@ -1,4 +1,9 @@
-use std::{fs, num::NonZeroU64, path::Path, time::Duration};
+use std::{
+    fs,
+    num::NonZeroU64,
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
 use toml::{map::Map, Value};
 
@@ -12,17 +17,17 @@ pub struct Kafka {
 }
 
 #[derive(Debug, Clone)]
-pub struct Data<'a> {
-    pub source: &'a Path,
+pub struct Data {
+    pub source: PathBuf,
     pub msg_sleep_in_ms: Duration,
     chunk_size: NonZeroU64,
     chunk_sleep_in_ms: Duration,
 }
 
 #[derive(Debug, Clone)]
-pub struct Config<'a> {
+pub struct Config {
     pub kafka: Kafka,
-    pub data: Data<'a>,
+    pub data: Data,
 }
 
 /// Checks that the 'brokers' value of the configuration is valid
@@ -37,13 +42,14 @@ fn check_brokers(brokers: &Vec<String>) -> Result<(), ConfigurationError> {
 }
 
 /// Returns the table from a configuration file, if it exists.
-fn get_table<'a, S: Into<String>>(
+fn get_table<S: Into<String>>(
     table_name: S,
-    config: &'a Value,
-) -> Result<&'a Map<String, Value>, ConfigurationError> {
+    config: &Value,
+) -> Result<Map<String, Value>, ConfigurationError> {
     let table_name: String = table_name.into();
     config[table_name]
         .as_table()
+        .cloned()
         .ok_or(ConfigurationError::new("kafka", ErrorType::TableNotFound))
 }
 
@@ -70,7 +76,7 @@ fn from_i64_to_u64(value: i64) -> Result<u64, ConfigurationError> {
     Ok(res)
 }
 
-pub fn load_config(from: &Path) -> Result<Config<'static>, ConfigurationError> {
+pub fn load_config(from: &Path) -> Result<Config, ConfigurationError> {
     let contents =
         fs::read_to_string(from).expect("Config file `producer_config.toml` should exists!");
 
@@ -100,13 +106,13 @@ pub fn load_config(from: &Path) -> Result<Config<'static>, ConfigurationError> {
         "source",
         ErrorType::KeyNotFoundForTable("data"),
     ))?;
-    let source = Path::new(source);
+    let source = PathBuf::from(source);
 
-    let msg_sleep_in_ms = read_integer_key_from_table("data", "msg_sleep_in_ms", data)?;
+    let msg_sleep_in_ms = read_integer_key_from_table("data", "msg_sleep_in_ms", &data)?;
     let msg_sleep_in_ms: u64 = from_i64_to_u64(msg_sleep_in_ms)?;
     let msg_sleep_in_ms = Duration::from_millis(msg_sleep_in_ms);
 
-    let chunk_size = read_integer_key_from_table("data", "chunk_size", data)?;
+    let chunk_size = read_integer_key_from_table("data", "chunk_size", &data)?;
     let chunk_size: u64 = from_i64_to_u64(chunk_size)?;
     let chunk_size: NonZeroU64 =
         chunk_size
@@ -115,11 +121,10 @@ pub fn load_config(from: &Path) -> Result<Config<'static>, ConfigurationError> {
                 ConfigurationError::Error(e.to_string())
             })?;
 
-    let chunk_sleep_in_ms = read_integer_key_from_table("data", "chunk_sleep_in_ms", data)?;
+    let chunk_sleep_in_ms = read_integer_key_from_table("data", "chunk_sleep_in_ms", &data)?;
     let chunk_sleep_in_ms: u64 = from_i64_to_u64(chunk_sleep_in_ms)?;
     let chunk_sleep_in_ms: Duration = Duration::from_millis(chunk_sleep_in_ms);
 
-    let source = source.as_ref();
     let data: Data = Data {
         source,
         msg_sleep_in_ms,
