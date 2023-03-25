@@ -12,8 +12,8 @@ pub struct Kafka {
 pub struct Data {
     pub source: PathBuf,
     pub msg_sleep_in_ms: Duration,
-    chunk_size: NonZeroU64,
-    chunk_sleep_in_ms: Duration,
+    pub chunk_size: NonZeroU64,
+    pub chunk_sleep_in_ms: Duration,
 }
 
 #[derive(Debug, Clone)]

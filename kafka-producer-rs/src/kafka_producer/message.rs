@@ -10,7 +10,7 @@ pub struct Message {
 }
 
 impl Message {
-    fn new(id: String, lat: f64, lon: f64, time: String, speed: f64) -> Self {
+    pub fn new(id: String, lat: f64, lon: f64, time: String, speed: f64) -> Self {
         Message {
             id,
             lat,
@@ -19,5 +19,5 @@ impl Message {
             speed,
         }
     }
-    fn new_from_string_record() -> () {}
+    pub fn new_from_string_record() -> () {}
 }

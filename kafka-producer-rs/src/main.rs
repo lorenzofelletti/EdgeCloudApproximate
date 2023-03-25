@@ -1,18 +1,15 @@
 use std::{path::Path, thread::sleep, time::Duration};
 
-use kafka::{
-    producer::{Producer, RequiredAcks},
-};
+use args::CliArgs;
+use clap::Parser;
+use config::load_config;
+use kafka::producer::{Producer, RequiredAcks};
 use kafka_producer::{errors::KafkaSendError, message::Message};
 
+mod args;
 mod config;
 mod kafka_producer;
-
-const BROKERS: [&str; 1] = ["192.168.56.46:9092"];
-const BASE_PATH: &str = "/home/lorenzo/EdgeCloudApproximate/";
-const FILE_RELATIVE_PATH: &str = "data/china/mobility/guang.csv";
-const CHUNK_SLEEP_IN_S: Duration = Duration::from_secs(5 * 60);
-const KAFKA_MSG_SLEEP_IN_MS: Duration = Duration::from_millis(1);
+mod subcommands;
 
 fn send_to_kafka_topic(
     msg: Message,
@@ -24,13 +21,23 @@ fn send_to_kafka_topic(
         .with_ack_timeout(Duration::from_secs(1))
         .with_required_acks(RequiredAcks::One)
         .create();
-    Err(KafkaSendError::new_unknown_error("Error sending the message"))
+    Err(KafkaSendError::new_unknown_error(
+        "Error sending the message",
+    ))
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut file_path = BASE_PATH.to_owned();
-    file_path.push_str(FILE_RELATIVE_PATH);
-    let mut reader = csv::Reader::from_path(Path::new(&file_path)).unwrap();
+    let config = load_config()?;
+
+    let cli = CliArgs::parse();
+
+    match &cli.subcommands {
+        Some(args::Commands::DeleteTopic) => {}
+        Some(args::Commands::EditConfig(args)) => {}
+        None => {}
+    }
+
+    let mut reader = csv::Reader::from_path(config.data.source).unwrap();
 
     for row in reader.records() {
         match row {
@@ -38,8 +45,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let data: Message = row.deserialize(None)?;
                 //let brokers = brokers.into_iter().map(|x| x.to_owned()).collect();
                 //send_to_kafka_topic(msg, topic, partition, brokers);
-                if !KAFKA_MSG_SLEEP_IN_MS.is_zero() {
-                    sleep(KAFKA_MSG_SLEEP_IN_MS)
+                if !config.data.msg_sleep_in_ms.is_zero() {
+                    sleep(config.data.msg_sleep_in_ms);
                 };
             }
             Err(e) => {
