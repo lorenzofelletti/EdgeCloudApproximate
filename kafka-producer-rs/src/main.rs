@@ -2,6 +2,7 @@ use args::{CliArgs, EditConfigCommands};
 use clap::Parser;
 use config::load_config;
 
+use kafka_producer::run_kafka_producer;
 use subcommands::{
     delete_topic::delete_topic,
     edit_config::{edit_config_create, edit_config_replace},
@@ -32,6 +33,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
         None => {
             let config = config?;
+            run_kafka_producer(config.clone(), &cli)?;
         }
     }
 

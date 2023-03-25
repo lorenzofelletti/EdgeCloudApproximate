@@ -1,23 +1,24 @@
 use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Message {
-    id: String,
-    lat: f64,
-    lon: f64,
-    time: String,
-    speed: f64,
+    pub id: String,
+    pub lat: f64,
+    pub lon: f64,
+    pub time: String,
+    pub speed: f64,
 }
 
 impl Message {
-    pub fn new(id: String, lat: f64, lon: f64, time: String, speed: f64) -> Self {
-        Message {
-            id,
-            lat,
-            lon,
-            time,
-            speed,
-        }
+    /// Serialize the `Message` in JSON format.
+    pub fn json_serialize(&self) -> Value {
+        json!({
+            "id": self.id,
+            "lat": self.lat,
+            "lon": self.lon,
+            "time": self.time,
+            "speed": self.speed,
+        })
     }
-    pub fn new_from_string_record() -> () {}
 }
