@@ -175,4 +175,7 @@ To start Livy: run `~/apache-livy[version...]/bin/livy-server start`
 
 ## Network Setup
 The setup includes, other than a VM with the setup described above, also other VMs, acting as Kafka producers, and with a simpler setup. The setup of these lighter VMs will be described later.
-The VMs communicate thanks to a network setup described [here](Network.md).
+The VMs communicate thanks to a network setup described [here](wiki/Network.md).
+
+## Kafka Setup
+In order to execute some of the programs contained in this repo, you need to follow the steps described [here](wiki/Kafka.md).
