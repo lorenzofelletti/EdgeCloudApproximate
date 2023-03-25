@@ -7,6 +7,8 @@ use std::{
 
 use toml::Value;
 
+use crate::utils::get_config_path;
+
 use self::{
     errors::{ConfigurationError, ErrorType},
     structs::{Config, Data, Kafka},
@@ -82,7 +84,7 @@ fn parse_data_table(config: &Value) -> Result<Data, ConfigurationError> {
 
 fn load_config_from(file: &Path) -> Result<Config, ConfigurationError> {
     let contents = fs::read_to_string(file)
-        .map_err(|e| ConfigurationError::new("Configuration file not found.", ErrorType::Error))?;
+        .map_err(|_| ConfigurationError::new("Configuration file not found.", ErrorType::Error))?;
 
     let config: Value = toml::from_str(&contents)
         .map_err(|e| ConfigurationError::new(e.message(), ErrorType::Error))?;
@@ -98,6 +100,7 @@ fn load_config_from(file: &Path) -> Result<Config, ConfigurationError> {
 
 /// Tries to load the program's configuration TOML file.
 pub fn load_config() -> Result<Config, ConfigurationError> {
-    let path = env::current_exe().map_err(|e| ConfigurationError::Error(e.to_string()))?;
+    let path = get_config_path()
+        .map_err(|_| ConfigurationError::new("Configuration file not found.", ErrorType::Error))?;
     load_config_from(path.as_ref())
 }

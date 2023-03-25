@@ -6,16 +6,6 @@ pub fn get_zookeeper_string(zookeeper: &Vec<String>) -> String {
     zookeeper.join(",")
 }
 
-pub fn get_config_path() -> Result<PathBuf, Box<dyn Error>> {
-    // Get current executable path
-    let executable_path = env::current_exe()?;
-
-    let mut output_path = PathBuf::from(executable_path);
-    output_path.set_file_name(TOML_FILE_NAME);
-
-    Ok(output_path)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

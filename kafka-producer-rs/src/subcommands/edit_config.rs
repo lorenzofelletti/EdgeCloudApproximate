@@ -1,8 +1,8 @@
 use std::{error::Error, fs};
 
-use crate::args::ReplaceConfig;
+use crate::{args::ReplaceConfig, utils::get_config_path};
 
-use super::{toml_template::TOML_CONFIG_TEMPLATE, utils::get_config_path};
+use super::toml_template::TOML_CONFIG_TEMPLATE;
 
 pub fn edit_config_create() -> Result<(), Box<dyn Error>> {
     let output_path = get_config_path()?;
