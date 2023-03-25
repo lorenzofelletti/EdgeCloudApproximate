@@ -1,10 +1,14 @@
-use std::{path::Path, thread::sleep, time::Duration};
+use std::{thread::sleep, time::Duration};
 
-use args::CliArgs;
+use args::{CliArgs, EditConfigCommands};
 use clap::Parser;
 use config::load_config;
 use kafka::producer::{Producer, RequiredAcks};
 use kafka_producer::{errors::KafkaSendError, message::Message};
+use subcommands::{
+    delete_topic::delete_topic,
+    edit_config::{self, edit_config_create},
+};
 
 mod args;
 mod config;
@@ -27,32 +31,28 @@ fn send_to_kafka_topic(
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let config = load_config()?;
+    let config = load_config();
 
     let cli = CliArgs::parse();
 
     match &cli.subcommands {
-        Some(args::Commands::DeleteTopic) => {}
-        Some(args::Commands::EditConfig(args)) => {}
-        None => {}
-    }
-
-    let mut reader = csv::Reader::from_path(config.data.source).unwrap();
-
-    for row in reader.records() {
-        match row {
-            Ok(row) => {
-                let data: Message = row.deserialize(None)?;
-                //let brokers = brokers.into_iter().map(|x| x.to_owned()).collect();
-                //send_to_kafka_topic(msg, topic, partition, brokers);
-                if !config.data.msg_sleep_in_ms.is_zero() {
-                    sleep(config.data.msg_sleep_in_ms);
-                };
+        Some(args::Commands::DeleteTopic) => {
+            let config = config?;
+            delete_topic(config.clone())?;
+        }
+        Some(args::Commands::EditConfig(args)) => match &args.subcommands {
+            Some(EditConfigCommands::Create) => {
+                edit_config_create()?;
             }
-            Err(e) => {
-                println!("Error reading row: `{e}'");
-                continue;
+            Some(EditConfigCommands::Replace(args)) => {
+                let config = config?;
             }
+            None => {
+                let config = config?;
+            }
+        },
+        None => {
+            let config = config?;
         }
     }
 

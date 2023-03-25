@@ -8,17 +8,6 @@ pub fn vec_empty_or_has_empty_strings(to_check: &Vec<String>) -> bool {
     to_check.len() == 0 || to_check.contains(&String::from(""))
 }
 
-/// Checks that the 'brokers' value of the configuration is valid
-pub fn check_brokers(brokers: &Vec<String>) -> Result<(), ConfigurationError> {
-    if vec_empty_or_has_empty_strings(brokers) {
-        return Err(ConfigurationError::new(
-            "",
-            ErrorType::InvalidValueForKey("brokers"),
-        ));
-    }
-    Ok(())
-}
-
 /// Checks that the value for `key` is not an empty vec and that it does not contains empty strings
 pub fn check_value_not_empty_or_has_empty_strings<S: Into<String>>(
     value: &Vec<String>,

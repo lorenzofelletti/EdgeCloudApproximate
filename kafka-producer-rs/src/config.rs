@@ -98,6 +98,6 @@ fn load_config_from(file: &Path) -> Result<Config, ConfigurationError> {
 
 /// Tries to load the program's configuration TOML file.
 pub fn load_config() -> Result<Config, ConfigurationError> {
-    let mut path = env::current_exe().map_err(|e| ConfigurationError::Error(e.to_string()))?;
+    let path = env::current_exe().map_err(|e| ConfigurationError::Error(e.to_string()))?;
     load_config_from(path.as_ref())
 }
