@@ -2,29 +2,8 @@ use std::{
     error::Error,
     fmt::{self},
 };
-/*
-#[derive(Debug)]
-pub struct ConfigError {
-    pub message: String,
-}
 
-impl ConfigError {
-    pub fn new<S: Into<String>>(message: S) -> Self {
-        Self {
-            message: message.into(),
-        }
-    }
-}
-
-impl Error for ConfigError {}
-
-impl fmt::Display for ConfigError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Error parsing the configuration: {}", self.message)
-    }
-}*/
-
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum ErrorType<S: Into<String>> {
     TableNotFound,
     KeyNotFoundForTable(S),
@@ -32,7 +11,7 @@ pub enum ErrorType<S: Into<String>> {
     Error,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ConfigurationError {
     TableNotFound(String),
     /// `KeyNotFound(table, key)`
@@ -71,5 +50,9 @@ impl ConfigurationError {
             }
             ErrorType::Error => ConfigurationError::Error(value.into()),
         }
+    }
+
+    pub fn new_key_not_found_err<S: Into<String>>(key: S, table: S) -> Self {
+        ConfigurationError::KeyNotFound(key.into(), table.into())
     }
 }

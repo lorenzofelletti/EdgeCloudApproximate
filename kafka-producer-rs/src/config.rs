@@ -1,105 +1,59 @@
 use std::{
-    fs,
+    env, fs,
     num::NonZeroU64,
     path::{Path, PathBuf},
     time::Duration,
 };
 
-use toml::{map::Map, Value};
+use toml::Value;
 
-use self::errors::{ConfigurationError, ErrorType};
+use self::{
+    errors::{ConfigurationError, ErrorType},
+    structs::{Config, Data, Kafka},
+    utils::{
+        check_value_not_empty_or_has_empty_strings, from_i64_to_u64, from_u64_to_nonzerou64,
+        from_vec_of_value_to_vec_of_string, get_table, read_array_key_from_table,
+        read_integer_key_from_table,
+    },
+};
 
 pub mod errors;
+pub mod structs;
+mod utils;
 
-#[derive(Debug, Clone)]
-pub struct Kafka {
-    pub brokers: Vec<String>,
-}
+/// Parses the 'kafka' table of the configuration.
+fn parse_kafka_table(config: &Value) -> Result<Kafka, ConfigurationError> {
+    let kafka = get_table("kafka", config)?;
 
-#[derive(Debug, Clone)]
-pub struct Data {
-    pub source: PathBuf,
-    pub msg_sleep_in_ms: Duration,
-    chunk_size: NonZeroU64,
-    chunk_sleep_in_ms: Duration,
-}
+    let zookeeper = read_array_key_from_table("kafka", "zookeeper", &kafka)?;
+    let zookeeper: Vec<String> = from_vec_of_value_to_vec_of_string(zookeeper);
+    check_value_not_empty_or_has_empty_strings(&zookeeper, "zookeeper")?;
 
-#[derive(Debug, Clone)]
-pub struct Config {
-    pub kafka: Kafka,
-    pub data: Data,
-}
+    let brokers = read_array_key_from_table("kafka", "brokers", &kafka)?;
+    let brokers: Vec<String> = from_vec_of_value_to_vec_of_string(brokers);
+    check_value_not_empty_or_has_empty_strings(&brokers, "brokers")?;
 
-/// Checks that the 'brokers' value of the configuration is valid
-fn check_brokers(brokers: &Vec<String>) -> Result<(), ConfigurationError> {
-    if brokers.len() == 0 || brokers.contains(&String::from("")) {
-        return Err(ConfigurationError::new(
-            "",
-            ErrorType::InvalidValueForKey("brokers"),
-        ));
-    }
-    Ok(())
-}
-
-/// Returns the table from a configuration file, if it exists.
-fn get_table<S: Into<String>>(
-    table_name: S,
-    config: &Value,
-) -> Result<Map<String, Value>, ConfigurationError> {
-    let table_name: String = table_name.into();
-    config[table_name]
-        .as_table()
-        .cloned()
-        .ok_or(ConfigurationError::new("kafka", ErrorType::TableNotFound))
-}
-
-/// Reads an integer key from a table
-fn read_integer_key_from_table<S: Into<String>>(
-    table_name: S,
-    key_name: S,
-    data: &toml::map::Map<std::string::String, Value>,
-) -> Result<i64, ConfigurationError> {
-    let key_name: String = key_name.into();
-    data[&key_name.clone()]
-        .as_integer()
+    let topic = kafka["topic"]
+        .as_str()
         .ok_or(ConfigurationError::new(
-            key_name.clone(),
-            ErrorType::KeyNotFoundForTable(table_name.into()),
-        ))
+            "topic",
+            ErrorType::KeyNotFoundForTable("kafka"),
+        ))?
+        .to_owned();
+
+    let partitions = read_integer_key_from_table("kafka", "partitions", &kafka)?;
+    let partitions = from_i64_to_u64(partitions).and_then(from_u64_to_nonzerou64)?;
+
+    Ok(Kafka {
+        zookeeper,
+        brokers,
+        topic,
+        partitions,
+    })
 }
 
-/// Converts i64 to u64, returning a `ConfigurationError` if the conversion fails
-fn from_i64_to_u64(value: i64) -> Result<u64, ConfigurationError> {
-    let res: u64 = value
-        .try_into()
-        .map_err(|e: <u64 as TryFrom<i64>>::Error| ConfigurationError::Error(e.to_string()))?;
-    Ok(res)
-}
-
-pub fn load_config(from: &Path) -> Result<Config, ConfigurationError> {
-    let contents =
-        fs::read_to_string(from).expect("Config file `producer_config.toml` should exists!");
-
-    let config: Value = toml::from_str(&contents)
-        .map_err(|e| ConfigurationError::new(e.message(), ErrorType::Error))?;
-
-    // Parses 'kakfa' table
-    let kafka = get_table("kafka", &config)?;
-
-    let brokers = kafka["brokers"].as_array().ok_or(ConfigurationError::new(
-        "brokers",
-        ErrorType::KeyNotFoundForTable("kafka"),
-    ))?;
-    let brokers: Vec<String> = brokers
-        .into_iter()
-        .map(|x| x.as_str().unwrap_or_default().to_owned())
-        .collect();
-
-    check_brokers(&brokers)?;
-
-    let kafka = Kafka { brokers };
-
-    // Parses 'data' table
+/// Parses the 'data' table of the configuration file.
+fn parse_data_table(config: &Value) -> Result<Data, ConfigurationError> {
     let data = get_table("data", &config)?;
 
     let source = data["source"].as_str().ok_or(ConfigurationError::new(
@@ -113,24 +67,37 @@ pub fn load_config(from: &Path) -> Result<Config, ConfigurationError> {
     let msg_sleep_in_ms = Duration::from_millis(msg_sleep_in_ms);
 
     let chunk_size = read_integer_key_from_table("data", "chunk_size", &data)?;
-    let chunk_size: u64 = from_i64_to_u64(chunk_size)?;
-    let chunk_size: NonZeroU64 =
-        chunk_size
-            .try_into()
-            .map_err(|e: <NonZeroU64 as TryFrom<u64>>::Error| {
-                ConfigurationError::Error(e.to_string())
-            })?;
+    let chunk_size: NonZeroU64 = from_i64_to_u64(chunk_size).and_then(from_u64_to_nonzerou64)?;
 
     let chunk_sleep_in_ms = read_integer_key_from_table("data", "chunk_sleep_in_ms", &data)?;
     let chunk_sleep_in_ms: u64 = from_i64_to_u64(chunk_sleep_in_ms)?;
     let chunk_sleep_in_ms: Duration = Duration::from_millis(chunk_sleep_in_ms);
-
-    let data: Data = Data {
+    Ok(Data {
         source,
         msg_sleep_in_ms,
         chunk_size,
         chunk_sleep_in_ms,
-    };
+    })
+}
+
+fn load_config_from(file: &Path) -> Result<Config, ConfigurationError> {
+    let contents =
+        fs::read_to_string(file).expect("Config file `producer_config.toml` should exists!");
+
+    let config: Value = toml::from_str(&contents)
+        .map_err(|e| ConfigurationError::new(e.message(), ErrorType::Error))?;
+
+    // Parses 'kakfa' table
+    let kafka = parse_kafka_table(&config)?;
+
+    // Parses 'data' table
+    let data = parse_data_table(&config)?;
 
     Ok(Config { kafka, data })
+}
+
+/// Tries to load the program's configuration TOML file.
+pub fn load_config() -> Result<Config, ConfigurationError> {
+    let mut path = env::current_exe().map_err(|e| ConfigurationError::Error(e.to_string()))?;
+    load_config_from(path.as_ref())
 }
