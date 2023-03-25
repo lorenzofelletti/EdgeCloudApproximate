@@ -10,3 +10,5 @@ msg_sleep_in_ms = 1\n\
 chunk_size = 300000\n\
 chunk_sleep_in_ms = 300000 # 5 minutes\n\
 ";
+
+pub const TOML_FILE_NAME: &str = "producer_config.toml";

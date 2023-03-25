@@ -27,16 +27,8 @@ pub enum Commands {
 
 #[derive(Args)]
 pub struct EditConfig {
-    #[arg(short, long)]
-    /// Change the configuration's topic
-    pub topic: Option<String>,
-
-    #[arg(short, long)]
-    /// Change the Kafka brokers
-    pub brokers: Option<String>,
-
     #[command(subcommand)]
-    pub subcommands: Option<EditConfigCommands>,
+    pub subcommands: EditConfigCommands,
 }
 
 #[derive(Subcommand)]
