@@ -81,8 +81,8 @@ fn parse_data_table(config: &Value) -> Result<Data, ConfigurationError> {
 }
 
 fn load_config_from(file: &Path) -> Result<Config, ConfigurationError> {
-    let contents =
-        fs::read_to_string(file).expect("Config file `producer_config.toml` should exists!");
+    let contents = fs::read_to_string(file)
+        .map_err(|e| ConfigurationError::new("Configuration file not found.", ErrorType::Error))?;
 
     let config: Value = toml::from_str(&contents)
         .map_err(|e| ConfigurationError::new(e.message(), ErrorType::Error))?;
