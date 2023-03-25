@@ -1,5 +1,5 @@
 use std::{
-    env, fs,
+    fs,
     num::NonZeroU64,
     path::{Path, PathBuf},
     time::Duration,

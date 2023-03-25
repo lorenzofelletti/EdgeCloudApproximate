@@ -1,7 +1,3 @@
-use std::{env, error::Error, path::PathBuf};
-
-use super::toml_template::TOML_FILE_NAME;
-
 pub fn get_zookeeper_string(zookeeper: &Vec<String>) -> String {
     zookeeper.join(",")
 }
