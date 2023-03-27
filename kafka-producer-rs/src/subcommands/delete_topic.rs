@@ -1,8 +1,11 @@
-use std::{error::Error, process::Command};
+use std::{
+    error::Error,
+    process::{Command, ExitStatus},
+};
 
 use kafka::client::KafkaClient;
 
-use crate::config::structs::Config;
+use crate::{config::structs::Config, subcommands::errors::SubcommandError};
 
 use super::utils::get_zookeeper_string;
 
@@ -22,18 +25,22 @@ pub fn delete_topic(config: Config) -> Result<(), Box<dyn Error>> {
     }
 
     let zookeeper = get_zookeeper_string(&config.kafka.zookeeper);
-    let zookeeper = format!("--zookeeper '{}'", zookeeper);
 
-    let topic = format!("--topic '{}'", config.kafka.topic);
+    let topic = config.kafka.topic;
 
     // run kafka-topics.sh --zookeeper ZOOKEEPER --delete --topic TOPIC
-    Command::new("kafka-topics.sh")
+    let res = Command::new("kafka-topics.sh")
+        .arg("--zookeeper")
         .arg(zookeeper)
         .arg("--delete")
+        .arg("--topic")
         .arg(topic)
         .output()?;
 
-    println!("Deleted topic {}", config.kafka.topic);
+    println!("{}", String::from_utf8_lossy(&res.stdout));
 
-    Ok(())
+    if ExitStatus::success(&res.status) {
+        return Ok(());
+    }
+    Err(Box::new(SubcommandError::new("Unable to delete topic.")))
 }

@@ -37,12 +37,9 @@ pub fn run_kafka_producer(config: Config, _cli: &CliArgs) -> Result<(), Box<dyn 
                 let data_json = data.json_serialize();
                 let partition: i32 = i % partitions_number; // round robin partition selection
 
-                let record = Record::from_key_value(
-                    &config.kafka.topic[..],
-                    data.id,
-                    data_json.to_string(),
-                )
-                .with_partition(partition);
+                let record =
+                    Record::from_key_value(&config.kafka.topic[..], data.id, data_json.to_string())
+                        .with_partition(partition);
 
                 producer.send(&record)?; // send to kafka
 
