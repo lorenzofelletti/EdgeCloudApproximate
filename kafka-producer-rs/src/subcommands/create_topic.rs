@@ -55,5 +55,5 @@ pub fn create_topic(config: Config, args: &CreateTopic) -> Result<(), Box<dyn Er
     if ExitStatus::success(&res.status) {
         return Ok(());
     }
-    Err(Box::new(SubcommandError::new("Unable to delete topic.")))
+    Err(Box::new(SubcommandError::new("Unable to create topic.")))
 }
