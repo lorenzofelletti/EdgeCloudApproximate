@@ -1,3 +1,4 @@
+pub mod create_topic;
 pub mod delete_topic;
 pub mod edit_config;
 mod errors;
