@@ -7,8 +7,12 @@ use kafka::client::KafkaClient;
 
 use crate::{config::structs::Config, subcommands::errors::SubcommandError};
 
-use super::utils::get_zookeeper_string;
+use super::utils::join_by_comma;
 
+/// Delete the kafka topic indicated in the configuration (if it exists).
+/// Under the hood, `kafka-topics.sh` is used, so it will always fail if
+/// the script is not available at system level to the user the program
+/// is executed with.
 pub fn delete_topic(config: Config) -> Result<(), Box<dyn Error>> {
     // Connect to Kafka and fetch the metadata for the topic
     let mut client = KafkaClient::new(config.kafka.brokers);
@@ -24,7 +28,7 @@ pub fn delete_topic(config: Config) -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
 
-    let zookeeper = get_zookeeper_string(&config.kafka.zookeeper);
+    let zookeeper = join_by_comma(&config.kafka.zookeeper);
 
     let topic = config.kafka.topic;
 

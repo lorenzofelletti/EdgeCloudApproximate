@@ -9,6 +9,9 @@ use self::message::Message;
 
 pub mod message;
 
+/// Produces Kafka messages on the topic indicated in the configuration at a specified rate,
+/// also indicated in the configuration.
+/// The function does not take care of the topic's creation, thus assumes it is already.
 pub fn run_kafka_producer(config: Config, _cli: &CliArgs) -> Result<(), Box<dyn Error>> {
     let mut producer = Producer::from_hosts(config.kafka.brokers)
         .with_ack_timeout(Duration::from_secs(1))

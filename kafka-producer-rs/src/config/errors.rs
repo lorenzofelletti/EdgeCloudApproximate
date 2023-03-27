@@ -4,14 +4,18 @@ use std::{
 };
 
 #[derive(Debug, Clone, Copy)]
+/// Enum of the possible errors that may happen when loading the configuration TOML file.
 pub enum ErrorType<S: Into<String>> {
     TableNotFound,
+    /// `KeyNotFoundForTable(table)`
     KeyNotFoundForTable(S),
+    /// `InvalidValueForKey(key)`
     InvalidValueForKey(S),
     Error,
 }
 
 #[derive(Debug, Clone)]
+/// Enum of different errors that may occur when loading the configuration TOML file.
 pub enum ConfigurationError {
     TableNotFound(String),
     /// `KeyNotFound(table, key)`
@@ -39,6 +43,7 @@ impl fmt::Display for ConfigurationError {
 }
 
 impl ConfigurationError {
+    /// Creates a new `ConfigurationError` of the specified `ErrorType`.
     pub fn new<S: Into<String>>(value: S, error_type: ErrorType<S>) -> Self {
         match error_type {
             ErrorType::TableNotFound => ConfigurationError::TableNotFound(value.into()),

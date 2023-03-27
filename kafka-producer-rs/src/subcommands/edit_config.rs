@@ -4,6 +4,8 @@ use crate::{args::ReplaceConfig, utils::get_config_path};
 
 use super::toml_template::TOML_CONFIG_TEMPLATE;
 
+/// Creates a configuration template in the same directory where the executable
+/// is placed into.
 pub fn edit_config_create() -> Result<(), Box<dyn Error>> {
     let output_path = get_config_path()?;
 
@@ -16,6 +18,7 @@ pub fn edit_config_create() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Replaces the current configuration TOML file with a new one.
 pub fn edit_config_replace(args: &ReplaceConfig) -> Result<(), Box<dyn Error>> {
     let output_path = get_config_path()?;
 

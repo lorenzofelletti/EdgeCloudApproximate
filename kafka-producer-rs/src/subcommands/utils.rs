@@ -1,4 +1,6 @@
-pub fn get_zookeeper_string(zookeeper: &Vec<String>) -> String {
+/// Joins a `Vec<String>` by comma except for the last element, that will not
+/// end with a comma.
+pub fn join_by_comma(zookeeper: &Vec<String>) -> String {
     zookeeper.join(",")
 }
 
@@ -13,7 +15,7 @@ mod tests {
             "192.168.56.11:2181".to_owned(),
         ];
         assert_eq!(
-            get_zookeeper_string(&zookeeper_arr),
+            join_by_comma(&zookeeper_arr),
             "192.168.56.10:2181,192.168.56.11:2181"
         )
     }
@@ -21,6 +23,6 @@ mod tests {
     #[test]
     fn test_zookeeper_string_with_one_entry() {
         let zookeeper_arr = vec!["192.168.56.10:2181".to_owned()];
-        assert_eq!(get_zookeeper_string(&zookeeper_arr), "192.168.56.10:2181")
+        assert_eq!(join_by_comma(&zookeeper_arr), "192.168.56.10:2181")
     }
 }

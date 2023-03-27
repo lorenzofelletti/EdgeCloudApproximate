@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+/// Struct holding the message Kafka message that will be sent.
 pub struct Message {
     pub id: String,
     pub lat: f64,

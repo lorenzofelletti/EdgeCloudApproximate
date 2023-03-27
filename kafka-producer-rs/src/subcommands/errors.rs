@@ -1,6 +1,7 @@
 use std::{error::Error, fmt};
 
 #[derive(Debug, Clone)]
+/// Describes an error occurred when executing one of the available subcommands.
 pub struct SubcommandError {
     message: String,
 }
