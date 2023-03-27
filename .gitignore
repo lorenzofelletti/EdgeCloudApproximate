@@ -2,3 +2,5 @@
 /.ipynb_checkpoints/
 venv/
 target/
+__pycache__/
+
