@@ -9,7 +9,7 @@ use self::message::Message;
 
 pub mod message;
 
-pub fn run_kafka_producer(config: Config, cli: &CliArgs) -> Result<(), Box<dyn Error>> {
+pub fn run_kafka_producer(config: Config, _cli: &CliArgs) -> Result<(), Box<dyn Error>> {
     let mut producer = Producer::from_hosts(config.kafka.brokers)
         .with_ack_timeout(Duration::from_secs(1))
         .with_required_acks(RequiredAcks::One)
@@ -40,7 +40,7 @@ pub fn run_kafka_producer(config: Config, cli: &CliArgs) -> Result<(), Box<dyn E
                 let record = Record::from_key_value(
                     &config.kafka.topic[..],
                     data.id,
-                    data_json.as_str().unwrap(),
+                    data_json.to_string(),
                 )
                 .with_partition(partition);
 
