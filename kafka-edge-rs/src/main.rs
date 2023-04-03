@@ -1,5 +1,7 @@
+mod args;
 mod config;
 mod kafka_producer;
+mod subcommands;
 
 fn main() {
     println!("Hello, world!");
