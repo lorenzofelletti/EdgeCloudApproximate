@@ -12,4 +12,7 @@ pub enum SamplingStrategy {
     Random,
     /// Sample messages using stratified sampling.
     Stratified,
+    /// Discard all messages when the message count exceed a thresho the message
+    /// count exceed a threshold
+    MsgCountThreshold,
 }
