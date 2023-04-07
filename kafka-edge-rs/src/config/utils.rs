@@ -63,6 +63,40 @@ pub fn read_array_key_from_table<S: Into<String>>(
         ))
 }
 
+/// Returns Ok if the key exists in the specified table, an Err otherwise.
+fn exists_key<S: Into<String>, S2: Into<String>>(
+    table_name: S,
+    key_name: S2,
+    table_data: &toml::map::Map<std::string::String, Value>,
+) -> Result<(), ConfigurationError> {
+    let key_name: String = key_name.into();
+    match table_data.contains_key(&key_name) {
+        true => Ok(()),
+        false => Err(ConfigurationError::new_key_not_found_err(
+            key_name,
+            table_name.into(),
+        )),
+    }
+}
+
+pub fn read_string_key_from_table<S: Into<String>>(
+    table_name: S,
+    key_name: S,
+    table_data: &toml::map::Map<std::string::String, Value>,
+) -> Result<String, ConfigurationError> {
+    let key_name: String = key_name.into();
+
+    exists_key(table_name, key_name.clone(), table_data)?;
+
+    let str = table_data[&key_name.clone()]
+        .as_str()
+        .ok_or(ConfigurationError::new(
+            table_data[&key_name.clone()].to_string(),
+            ErrorType::InvalidValueForKey(key_name),
+        ))?;
+    Ok(str.to_owned())
+}
+
 /// Converts i64 to u64, returning a `ConfigurationError` if the conversion fails
 pub fn from_i64_to_u64(value: i64) -> Result<u64, ConfigurationError> {
     let res: u64 = value

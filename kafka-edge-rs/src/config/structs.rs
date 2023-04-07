@@ -1,6 +1,6 @@
-use std::{time::Duration};
+use std::time::Duration;
 
-use crate::kafka_producer::strategies::SendStrategy;
+use crate::kafka_producer::strategies::{SamplingStrategy, SendStrategy};
 
 #[derive(Debug, Clone)]
 pub struct Kafka {
@@ -19,6 +19,7 @@ pub struct DataOut {
     pub target_topic: String,
     pub send_every_ms: Duration,
     pub send_strategy: SendStrategy,
+    pub sampling_strategy: SamplingStrategy,
 }
 
 #[derive(Debug, Clone)]
