@@ -3,6 +3,7 @@ use std::{
     fmt::{self},
 };
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 /// Enum of the possible errors that may happen when loading the configuration TOML file.
 pub enum ErrorType<S: Into<String>> {

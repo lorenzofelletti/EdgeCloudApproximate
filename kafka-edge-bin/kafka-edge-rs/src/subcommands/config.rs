@@ -1,56 +1,52 @@
-use std::{
-    error::Error,
-    process::{Command, ExitStatus},
-};
-
-use kafka::client::KafkaClient;
+use std::{error::Error, fs};
 
 use crate::{
-    args::TopicCreateArgs,
-    config::structs::Config,
-    subcommands::{errors::SubcommandError, utils::join_by_comma},
+    args::{CreateConfig, ReplaceConfig},
+    config::constants::{
+        DEFAULT_PARTITION_TO_READ, DEFAULT_SAMPLING_STRATEGY, DEFAULT_SEND_EVERY_MS,
+        DEFAULT_SEND_STRATEGY, DEFAULT_SOURCE_TOPIC, DEFAULT_TARGET_TOPIC, TOML_CONFIG_TEMPLATE,
+    },
+    utils::get_config_path,
 };
 
-pub fn topic_create(config: Config, args: &TopicCreateArgs) -> Result<(), Box<dyn Error>> {
-    let replication_factor = args.replication_factor;
+/// Creates a configuration template in the same directory where the executable
+/// is placed into.
+pub fn config_create(args: &CreateConfig) -> Result<(), Box<dyn Error>> {
+    let output_path = get_config_path()?;
 
-    // Connect to Kafka and fetch the metadata for the topic
-    let mut client = KafkaClient::new(config.kafka.brokers.clone());
-    client.load_metadata_all()?;
+    let source_topic = args
+        .source_topic
+        .clone()
+        .unwrap_or(DEFAULT_SOURCE_TOPIC.to_owned());
 
-    let topic_exists = client
-        .topics()
-        .names()
-        .into_iter()
-        .any(|topic| topic.to_owned() == config.data_out.target_topic);
-    if topic_exists {
-        println!("Topic already exists!");
-        return Ok(());
-    }
+    let target_topic = args
+        .target_topic
+        .clone()
+        .unwrap_or(DEFAULT_TARGET_TOPIC.to_owned());
 
-    let brokers = join_by_comma(&config.kafka.brokers);
+    let toml_template = TOML_CONFIG_TEMPLATE
+        .replace("{SOURCE_TOPIC}", &source_topic)
+        .replace(
+            "{PARTITION_TO_READ}",
+            &DEFAULT_PARTITION_TO_READ.to_string(),
+        )
+        .replace("{TARGET_TOPIC}", &target_topic)
+        .replace("{SEND_EVERY_MS}", &DEFAULT_SEND_EVERY_MS.to_string())
+        .replace("{SEND_STRATEGY}", &DEFAULT_SEND_STRATEGY)
+        .replace("{SAMPLING_STRATEGY}", &DEFAULT_SAMPLING_STRATEGY);
 
-    let topic = config.data_out.target_topic;
-    let partitions = &args.partitions;
+    fs::write(&output_path, toml_template)?;
 
-    // run kafka-topics.sh --create --topic TOPIC --bootstrap-server BROKERS --partiotions PARTITIONS
-    // --replication-factor REPLICATION_FACTOR
-    let res = Command::new("kafka-topics.sh")
-        .arg("--create")
-        .arg("--topic")
-        .arg(topic)
-        .arg("--bootstrap-server")
-        .arg(brokers)
-        .arg("--partitions")
-        .arg(partitions.to_string())
-        .arg("--replication-factor")
-        .arg(replication_factor.to_string())
-        .output()?;
+    Ok(())
+}
 
-    println!("{}", String::from_utf8_lossy(&res.stdout));
+/// Replaces the current configuration TOML file with a new one.
+pub fn config_replace(args: &ReplaceConfig) -> Result<(), Box<dyn Error>> {
+    let output_path = get_config_path()?;
 
-    if ExitStatus::success(&res.status) {
-        return Ok(());
-    }
-    Err(Box::new(SubcommandError::new("Unable to create topic.")))
+    let new_config_contents = fs::read_to_string(args.file.clone())?;
+
+    fs::write(&output_path, new_config_contents)?;
+
+    Ok(())
 }

@@ -98,6 +98,7 @@ pub fn read_string_key_from_table<S: Into<String>>(
 }
 
 /// Converts i64 to u64, returning a `ConfigurationError` if the conversion fails
+#[allow(dead_code)]
 pub fn from_i64_to_u64(value: i64) -> Result<u64, ConfigurationError> {
     let res: u64 = value
         .try_into()
@@ -105,6 +106,7 @@ pub fn from_i64_to_u64(value: i64) -> Result<u64, ConfigurationError> {
     Ok(res)
 }
 
+#[allow(dead_code)]
 pub fn from_u64_to_nonzerou64(value: u64) -> Result<NonZeroU64, ConfigurationError> {
     value
         .try_into()

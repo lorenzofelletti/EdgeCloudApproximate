@@ -32,12 +32,13 @@ pub enum Commands {
 #[derive(Args)]
 pub struct Topic {
     #[command(subcommand)]
-    pub subcommands: Option<TopicCommands>,
+    pub subcommands: TopicCommands,
 }
 
 #[derive(Subcommand)]
 pub enum TopicCommands {
     Create(TopicCreateArgs),
+    Delete(TopicDeleteArgs),
 }
 
 #[derive(Args)]
@@ -48,6 +49,9 @@ pub struct EditConfig {
 
 #[derive(Args)]
 pub struct TopicCreateArgs {
+    #[arg()]
+    /// Kafka topic to create ("out" only supported at the moment)
+    pub topic: String,
     #[arg(long, default_value_t = NonZeroU32::new(1).unwrap())]
     /// Use it to set the topic's replication factor
     pub replication_factor: NonZeroU32,
@@ -57,12 +61,19 @@ pub struct TopicCreateArgs {
     pub partitions: String,
 }
 
+#[derive(Args)]
+pub struct TopicDeleteArgs {
+    #[arg()]
+    /// Kafka topic to delete ("out" only supported at the moment)
+    pub topic: String,
+}
+
 #[derive(Subcommand)]
 pub enum EditConfigCommands {
     #[command(name = "create")]
     /// Creates a default configuration file, or overwrites an existing one,
     /// resetting config to defaults.
-    Create,
+    Create(CreateConfig),
 
     #[command(name = "replace")]
     /// Replace the configuration file with a new one
@@ -74,4 +85,13 @@ pub struct ReplaceConfig {
     #[arg()]
     /// File that will replace the current config
     pub file: PathBuf,
+}
+
+#[derive(Args)]
+pub struct CreateConfig {
+    #[arg(long)]
+    pub source_topic: Option<String>,
+
+    #[arg(long)]
+    pub target_topic: Option<String>,
 }
