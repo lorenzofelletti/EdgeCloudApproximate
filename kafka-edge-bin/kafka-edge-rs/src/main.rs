@@ -1,6 +1,7 @@
 use args::{CliArgs, EditConfigCommands, TopicCommands};
 use clap::Parser;
 use config::load_config;
+use kafka_producer::run_producer;
 use subcommands::{
     config::{config_create, config_replace, config_show},
     topic::topic_create,
@@ -19,27 +20,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match &cli.subcommands {
         Some(args::Commands::EditConfig(edit)) => match &edit.subcommands {
-            EditConfigCommands::Create(args) => config_create(args)?,
-            EditConfigCommands::Replace(args) => config_replace(args)?,
-            EditConfigCommands::Show => config_show(config?)?,
+            EditConfigCommands::Create(args) => config_create(args),
+            EditConfigCommands::Replace(args) => config_replace(args),
+            EditConfigCommands::Show => config_show(config?),
         },
         Some(args::Commands::Topic(topic)) => {
             let config = config?;
             match &topic.subcommands {
-                TopicCommands::Create(args) => topic_create(config, args)?,
+                TopicCommands::Create(args) => topic_create(config, args),
                 TopicCommands::Delete(_args) => todo!(),
             }
         }
-        None => todo!(),
-    };
-
-    Ok(())
+        None => run_producer(config?, &cli),
+    }
 }
-
-// read from kafka topic
-// as many msgs as possible
-// process data
-// write to another topic
-// commit offset
-// sleep for window minutes
-// repeat
