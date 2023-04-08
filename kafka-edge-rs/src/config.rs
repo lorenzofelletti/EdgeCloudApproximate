@@ -11,12 +11,13 @@ use self::{
     errors::{ConfigurationError, ErrorType},
     structs::{Config, DataIn, DataOut, Kafka},
     utils::{
-        check_value_not_empty_or_has_empty_strings, from_i64_to_u64, from_u64_to_nonzerou64,
+        check_value_not_empty_or_has_empty_strings, from_i64_to_u64,
         from_vec_of_value_to_vec_of_string, get_table, read_array_key_from_table,
         read_integer_key_from_table, read_string_key_from_table,
     },
 };
 
+#[macro_use] mod macros;
 pub mod constants;
 mod errors;
 pub mod structs;
