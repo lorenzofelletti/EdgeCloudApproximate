@@ -25,7 +25,7 @@ pub mod structs;
 mod utils;
 
 /// Parses the 'kafka' table of the configuration.
-#[table_name("kafka")]
+#[table_name(kafka)]
 fn parse_kafka_table(config: &Value) -> Result<Kafka, ConfigurationError> {
     read_array_of_hosts!(zookeeper, table_name, data);
     read_array_of_hosts!(brokers, table_name, data);
@@ -34,7 +34,7 @@ fn parse_kafka_table(config: &Value) -> Result<Kafka, ConfigurationError> {
 }
 
 /// Parses the 'data' table of the configuration file.
-#[table_name("data_in")]
+#[table_name(data_in)]
 fn parse_data_in_table(config: &Value) -> Result<DataIn, ConfigurationError> {
     let source_topic = read_string_key_from_table(table_name, "source_topic", &data)?;
 
@@ -50,7 +50,7 @@ fn parse_data_in_table(config: &Value) -> Result<DataIn, ConfigurationError> {
 }
 
 /// Parses the 'data' table of the configuration file.
-#[table_name("data_out")]
+#[table_name(data_out)]
 fn parse_data_out_table(config: &Value) -> Result<DataOut, ConfigurationError> {
     read_duration!(send_every_ms, table_name, data);
 
@@ -104,7 +104,12 @@ fn load_config_from(file: &Path) -> Result<Config, ConfigurationError> {
 
 pub fn load_config() -> Result<Config, ConfigurationError> {
     let path = get_config_path()
-        .map_err(|_| ConfigurationError::new("Configuration file not found.", ErrorType::Error))?;
-    //load_config_from(path.as_ref())
-    load_config_from(&path)
+        .map_err(|_| ConfigurationError::new("Unexpected error.", ErrorType::Error))?;
+    match path.exists() {
+        true => load_config_from(path.as_ref()),
+        false => Err(ConfigurationError::new(
+            "Configuration file does not exists!",
+            ErrorType::Error,
+        )),
+    }
 }
