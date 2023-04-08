@@ -1,4 +1,4 @@
-use std::{path::PathBuf, num::NonZeroU32};
+use std::{num::NonZeroU32, path::PathBuf};
 
 use clap::{Args, Parser, Subcommand};
 

@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+  "config-proc-macros",
+  "kafka-edge-rs"
+]

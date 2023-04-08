@@ -1,8 +1,15 @@
-use std::{error::Error, process::{Command, ExitStatus}};
+use std::{
+    error::Error,
+    process::{Command, ExitStatus},
+};
 
 use kafka::client::KafkaClient;
 
-use crate::{args::TopicCreateArgs, config::structs::Config, subcommands::{utils::join_by_comma, errors::SubcommandError}};
+use crate::{
+    args::TopicCreateArgs,
+    config::structs::Config,
+    subcommands::{errors::SubcommandError, utils::join_by_comma},
+};
 
 pub fn topic_create(config: Config, args: &TopicCreateArgs) -> Result<(), Box<dyn Error>> {
     let replication_factor = args.replication_factor;
