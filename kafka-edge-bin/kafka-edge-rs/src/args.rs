@@ -78,6 +78,10 @@ pub enum EditConfigCommands {
     #[command(name = "replace")]
     /// Replace the configuration file with a new one
     Replace(ReplaceConfig),
+
+    #[command(name = "show")]
+    /// Shows the current config, if present
+    Show,
 }
 
 #[derive(Args)]

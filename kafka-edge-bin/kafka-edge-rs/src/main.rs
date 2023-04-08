@@ -2,7 +2,7 @@ use args::{CliArgs, EditConfigCommands, TopicCommands};
 use clap::Parser;
 use config::load_config;
 use subcommands::{
-    config::{config_create, config_replace},
+    config::{config_create, config_replace, config_show},
     topic::topic_create,
 };
 
@@ -21,6 +21,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(args::Commands::EditConfig(edit)) => match &edit.subcommands {
             EditConfigCommands::Create(args) => config_create(args)?,
             EditConfigCommands::Replace(args) => config_replace(args)?,
+            EditConfigCommands::Show => config_show(config?)?,
         },
         Some(args::Commands::Topic(topic)) => {
             let config = config?;

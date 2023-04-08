@@ -2,9 +2,13 @@ use std::{error::Error, fs};
 
 use crate::{
     args::{CreateConfig, ReplaceConfig},
-    config::constants::{
-        DEFAULT_PARTITION_TO_READ, DEFAULT_SAMPLING_STRATEGY, DEFAULT_SEND_EVERY_MS,
-        DEFAULT_SEND_STRATEGY, DEFAULT_SOURCE_TOPIC, DEFAULT_TARGET_TOPIC, TOML_CONFIG_TEMPLATE,
+    config::{
+        constants::{
+            DEFAULT_PARTITION_TO_READ, DEFAULT_SAMPLING_STRATEGY, DEFAULT_SEND_EVERY_MS,
+            DEFAULT_SEND_STRATEGY, DEFAULT_SOURCE_TOPIC, DEFAULT_TARGET_TOPIC,
+            TOML_CONFIG_TEMPLATE,
+        },
+        structs::Config,
     },
     utils::get_config_path,
 };
@@ -48,5 +52,13 @@ pub fn config_replace(args: &ReplaceConfig) -> Result<(), Box<dyn Error>> {
 
     fs::write(&output_path, new_config_contents)?;
 
+    Ok(())
+}
+
+pub fn config_show(config: Config) -> Result<(), Box<dyn Error>> {
+    println!(
+        "{:#?}\n{:#?}\n{:#?}",
+        config.kafka, config.data_in, config.data_out
+    );
     Ok(())
 }
