@@ -4,7 +4,7 @@ use crate::{
     args::{CreateConfig, ReplaceConfig},
     config::{
         constants::{
-            DEFAULT_PARTITION_TO_READ, DEFAULT_SAMPLING_STRATEGY, DEFAULT_SEND_EVERY_MS,
+            DEFAULT_CONSUMER_GROUP, DEFAULT_SAMPLING_STRATEGY, DEFAULT_SEND_EVERY_MS,
             DEFAULT_SEND_STRATEGY, DEFAULT_SOURCE_TOPIC, DEFAULT_TARGET_TOPIC,
             TOML_CONFIG_TEMPLATE,
         },
@@ -30,10 +30,7 @@ pub fn config_create(args: &CreateConfig) -> Result<(), Box<dyn Error>> {
 
     let toml_template = TOML_CONFIG_TEMPLATE
         .replace("{SOURCE_TOPIC}", &source_topic)
-        .replace(
-            "{PARTITION_TO_READ}",
-            &DEFAULT_PARTITION_TO_READ.to_string(),
-        )
+        .replace("{CONSUMER_GROUP}", &DEFAULT_CONSUMER_GROUP.to_string())
         .replace("{TARGET_TOPIC}", &target_topic)
         .replace("{SEND_EVERY_MS}", &DEFAULT_SEND_EVERY_MS.to_string())
         .replace("{SEND_STRATEGY}", &DEFAULT_SEND_STRATEGY)

@@ -11,7 +11,13 @@ for configuration.";
 #[command(author, version, about = ABOUT, long_about = None)]
 #[command(propagate_version = true)]
 pub struct CliArgs {
+    #[arg(short, long, default_value_t = 0.5)]
+    /// The sampling percentage; i.e. how many of the incoming messages to
+    /// discard, in percentage
+    pub sampling_percentage: f64,
+
     #[arg(long)]
+    /// Override the strategy indicated in the TOML configuration file
     pub override_send_strategy: Option<String>,
 
     #[command(subcommand)]
@@ -21,7 +27,7 @@ pub struct CliArgs {
 #[derive(Subcommand)]
 pub enum Commands {
     #[command(name = "topic")]
-    /// Manage out topic
+    /// Manage topics
     Topic(Topic),
 
     #[command(name = "config")]
@@ -59,6 +65,19 @@ pub struct TopicCreateArgs {
     #[arg(short, long, required = true)]
     /// The number of partitons of the OUT topic
     pub partitions: String,
+
+    #[arg(long = "for-nbw-strat", action = clap::ArgAction::SetTrue)]
+    /// Set it to true when you intend to use the `NeighborhoodWise` strategy.
+    /// It will signal the program to create as many topic as there are
+    /// neighborhoods in the geojson neighborhood file specified in the config
+    /// (or passed with the -n option). Note that this option must be set even
+    /// if the `NeighborhoodWise` strategy is set in the configuration TOML.
+    pub for_neighborhoodwise_strategy: bool,
+
+    #[arg(short, long)]
+    /// The geojson file to be used to calculate the number of neighborhoods,
+    /// and thus partitions, to create.
+    pub neighborhood_file: Option<String>,
 }
 
 #[derive(Args)]

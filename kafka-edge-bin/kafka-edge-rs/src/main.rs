@@ -9,6 +9,7 @@ use subcommands::{
 
 mod args;
 mod config;
+mod geospatial;
 mod kafka_producer;
 mod subcommands;
 mod utils;

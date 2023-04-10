@@ -1,4 +1,8 @@
-use std::{fs, path::Path, time::Duration};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
 use config_proc_macros::table_name;
 use toml::Value;
@@ -38,14 +42,11 @@ fn parse_kafka_table(config: &Value) -> Result<Kafka, ConfigurationError> {
 fn parse_data_in_table(config: &Value) -> Result<DataIn, ConfigurationError> {
     let source_topic = read_string_key_from_table(table_name, "source_topic", &data)?;
 
-    let partition_to_read = read_integer_key_from_table(table_name, "partition_to_read", &data)?;
-    let partition_to_read: i32 = partition_to_read
-        .try_into()
-        .expect("Partition number too big!");
+    let consumer_group = read_string_key_from_table(table_name, "consumer_group", &data)?;
 
     Ok(DataIn {
         source_topic,
-        partition_to_read,
+        consumer_group,
     })
 }
 
@@ -61,7 +62,13 @@ fn parse_data_out_table(config: &Value) -> Result<DataOut, ConfigurationError> {
         table_name,
         data,
         "roundrobin" => Ok(SendStrategy::RoundRobin),
-        "random" => Ok(SendStrategy::Random)
+        "random" => Ok(SendStrategy::Random),
+        "neighborhoodwise" => Ok(SendStrategy::NeighborhoodWise)
+    };
+
+    let neighborhoods_file: Option<PathBuf> = match send_strategy {
+        SendStrategy::NeighborhoodWise => Some(read_path!(neighborhoods_file, table_name, data)),
+        _ => None,
     };
 
     read_string_with_match! {
@@ -76,6 +83,7 @@ fn parse_data_out_table(config: &Value) -> Result<DataOut, ConfigurationError> {
         target_topic,
         send_every_ms,
         send_strategy,
+        neighborhoods_file,
         sampling_strategy,
     })
 }
