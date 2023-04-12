@@ -110,9 +110,9 @@ pub fn run_producer(config: Config, args: &CliArgs) -> Result<(), Box<dyn Error>
         }
         if start_time.elapsed().as_millis() >= config.data_out.send_every_ms.as_millis() {
             sampling_strategy.sample(sampling_percentage, &mut messages);
+            send_strategy.send(&mut producer, &messages, &output_topics, partitions)?;
             messages.clear();
             start_time = std::time::Instant::now();
-            send_strategy.send(&mut producer, &messages, &output_topics, partitions)?;
         }
     }
 }
