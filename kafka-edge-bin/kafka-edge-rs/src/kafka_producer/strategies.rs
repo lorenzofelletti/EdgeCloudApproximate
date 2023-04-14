@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use geojson::Feature;
 use kafka::producer::{Producer, Record};
 use rand::Rng;
 
@@ -73,10 +74,48 @@ impl SendStrategy {
         messages: &Vec<Message>,
         topics: &[String],
         partitions: i32,
+        features: &Option<Vec<Feature>>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         match self {
             SendStrategy::NeighborhoodWise => {
-                todo!()
+                let topic = topics.first().expect("No topic given!");
+                let mut neighborhoods: HashMap<String, Vec<Message>> = HashMap::new();
+                let x = features.unwrap()[0];
+                let x =x.geometry.unwrap();
+                let x = x.bbox.unwrap();
+
+                // group messages by neighborhood
+                for msg in messages {
+                    let neighborhood = msg
+                        .get_neighborhood(&features.unwrap())
+                        .expect("No neighborhood found for message!");
+                    let neighborhood = neighborhood.to_string();
+                    let neighborhood = neighborhoods.entry(neighborhood).or_insert(vec![]);
+                    neighborhood.push(msg.clone());
+                }
+
+                // send messages to their respective neighborhood
+                for (idx, (neighborhood, messages)) in neighborhoods.iter().enumerate() {
+                    let topic = format!("{}{}", topic, idx + 1);
+                    let mut partition: i32;
+
+                    for (idx, msg) in messages.iter().enumerate() {
+                        // choose a partition in a round-robin fashion
+                        partition = (idx % partitions as usize) as i32;
+
+                        // create a record
+                        let record = Record::from_key_value(
+                            &topic,
+                            msg.id.clone(),
+                            msg.json_serialize().to_string(),
+                        )
+                        .with_partition(partition);
+
+                        // send the record
+                        producer.send(&record)?;
+                    }
+                }
+                Ok(())
             }
             strat => {
                 let topic = topics.first().expect("No topic given!");

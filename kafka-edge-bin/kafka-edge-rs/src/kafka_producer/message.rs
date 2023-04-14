@@ -1,4 +1,5 @@
 use geohash::{Coord, GeohashError};
+use geojson::Feature;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Error, Value};
 
@@ -39,4 +40,30 @@ impl Message {
             6,
         )
     }
+
+    /// Get the neighborhood of the message.
+    pub fn get_neighborhood(
+        &self,
+        features: &Vec<Feature>
+    ) -> Option<Feature> {
+        let geohash = self.geohash();
+        if geohash.is_err() {
+            return None;
+        }
+        let geohash = geohash.unwrap();
+
+        for feature in features {
+            feature.properties.unwrap().get("NAME");
+            let neighborhood_geohash = feature
+                .properties
+                .get("geohash")
+                .expect("No geohash found for neighborhood!");
+            let neighborhood_geohash = neighborhood_geohash.as_str().unwrap();
+
+            if geohash.starts_with(neighborhood_geohash) {
+                return Some(feature.clone());
+            }
+        }
+        
+        None
 }

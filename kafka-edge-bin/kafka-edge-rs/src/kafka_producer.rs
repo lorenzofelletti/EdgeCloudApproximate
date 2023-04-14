@@ -1,5 +1,6 @@
 use std::{error::Error, time::Duration, vec};
 
+use geojson::Feature;
 use kafka::{
     consumer::{Consumer, MessageSet},
     producer::{Producer, RequiredAcks},
@@ -63,21 +64,22 @@ pub fn run_producer(config: Config, args: &CliArgs) -> Result<(), Box<dyn Error>
     }
     .ok_or("Unrecognized strategy")?;
 
-    let mut features = vec![];
+    let mut features: Option<Vec<Feature>> = None;
 
-    let output_topics =
-        match send_strategy {
-            SendStrategy::NeighborhoodWise => {
-                features =
-                    read_neighborhoods(&config.clone().data_out.neighborhoods_file.expect(
+    let output_topics = match send_strategy {
+        SendStrategy::NeighborhoodWise => {
+            features =
+                Some(read_neighborhoods(
+                    &config.clone().data_out.neighborhoods_file.expect(
                         "Neighborhoods file must exists for this NeighborhooWise strategy!",
-                    ))?;
-                get_topics_names_for_neigborhood_wise_strategy(&config, &features)
-            }
-            _ => {
-                vec![config.data_out.target_topic.clone()]
-            }
-        };
+                    ),
+                )?);
+            get_topics_names_for_neigborhood_wise_strategy(&config, &features.clone().unwrap())
+        }
+        _ => {
+            vec![config.data_out.target_topic.clone()]
+        }
+    };
 
     let mut consumer = make_consumer(config.clone())?;
     let mut producer = make_producer(config.clone())?;
@@ -110,7 +112,13 @@ pub fn run_producer(config: Config, args: &CliArgs) -> Result<(), Box<dyn Error>
         }
         if start_time.elapsed().as_millis() >= config.data_out.send_every_ms.as_millis() {
             sampling_strategy.sample(sampling_percentage, &mut messages);
-            send_strategy.send(&mut producer, &messages, &output_topics, partitions)?;
+            send_strategy.send(
+                &mut producer,
+                &messages,
+                &output_topics,
+                partitions,
+                &features,
+            )?;
             messages.clear();
             start_time = std::time::Instant::now();
         }

@@ -67,7 +67,7 @@ pub struct TopicCreateArgs {
     pub partitions: String,
 
     #[arg(long = "for-nbw-strat", action = clap::ArgAction::SetTrue)]
-    /// Set it to true when you intend to use the `NeighborhoodWise` strategy.
+    /// Set it when you intend to use the `NeighborhoodWise` strategy.
     /// It will signal the program to create as many topic as there are
     /// neighborhoods in the geojson neighborhood file specified in the config
     /// (or passed with the -n option). Note that this option must be set even

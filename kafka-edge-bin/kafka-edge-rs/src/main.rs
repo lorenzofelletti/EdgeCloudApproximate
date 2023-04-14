@@ -28,7 +28,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(args::Commands::Topic(topic)) => {
             let config = config?;
             match &topic.subcommands {
-                TopicCommands::Create(args) => topic_create(config, args),
+                TopicCommands::Create(args) => topic_create(&config, args),
                 TopicCommands::Delete(_args) => todo!(),
             }
         }
