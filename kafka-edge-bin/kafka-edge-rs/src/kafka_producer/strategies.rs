@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 
-use geojson::Feature;
 use kafka::producer::{Producer, Record};
+use log::warn;
 use rand::Rng;
+
+use crate::{create_record, create_record_with_partition, skip_fail, skip_none};
 
 use super::message::Message;
 
@@ -74,42 +76,41 @@ impl SendStrategy {
         messages: &Vec<Message>,
         topics: &[String],
         partitions: i32,
-        features: &Option<Vec<Feature>>,
+        neighborhood_geohases: &Option<HashMap<String, Vec<String>>>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         match self {
             SendStrategy::NeighborhoodWise => {
                 let topic = topics.first().expect("No topic given!");
-                let mut neighborhoods: HashMap<String, Vec<Message>> = HashMap::new();
-                let x = features.unwrap()[0];
-                let x =x.geometry.unwrap();
-                let x = x.bbox.unwrap();
+                let mut neighborhood_messages: HashMap<String, Vec<&Message>> = HashMap::new();
+                let neigborhoods_geohases = neighborhood_geohases.clone().unwrap();
 
                 // group messages by neighborhood
                 for msg in messages {
-                    let neighborhood = msg
-                        .get_neighborhood(&features.unwrap())
-                        .expect("No neighborhood found for message!");
-                    let neighborhood = neighborhood.to_string();
-                    let neighborhood = neighborhoods.entry(neighborhood).or_insert(vec![]);
-                    neighborhood.push(msg.clone());
+                    let msg_gh = skip_fail!(msg.geohash());
+
+                    // find key that contains the geohash in its value vector
+                    let neighborhood =
+                        skip_none!(neigborhoods_geohases.iter().find_map(|(key, &ref val)| {
+                            if val.iter().any(|gh| gh == &msg_gh) {
+                                Some(key)
+                            } else {
+                                None
+                            }
+                        }));
+
+                    neighborhood_messages
+                        .entry(neighborhood.to_string())
+                        .and_modify(|v| v.push(msg))
+                        .or_insert(Vec::new());
                 }
 
                 // send messages to their respective neighborhood
-                for (idx, (neighborhood, messages)) in neighborhoods.iter().enumerate() {
+                for (idx, (_neighborhood, messages)) in neighborhood_messages.iter().enumerate() {
                     let topic = format!("{}{}", topic, idx + 1);
-                    let mut partition: i32;
 
-                    for (idx, msg) in messages.iter().enumerate() {
-                        // choose a partition in a round-robin fashion
-                        partition = (idx % partitions as usize) as i32;
-
+                    for (_, msg) in messages.iter().enumerate() {
                         // create a record
-                        let record = Record::from_key_value(
-                            &topic,
-                            msg.id.clone(),
-                            msg.json_serialize().to_string(),
-                        )
-                        .with_partition(partition);
+                        let record = create_record!(topic, msg);
 
                         // send the record
                         producer.send(&record)?;
@@ -134,12 +135,7 @@ impl SendStrategy {
                     }
 
                     // create a record
-                    let record = Record::from_key_value(
-                        &topic,
-                        msg.id.clone(),
-                        msg.json_serialize().to_string(),
-                    )
-                    .with_partition(partition);
+                    let record = create_record_with_partition!(topic, msg, partition);
 
                     // send the record
                     producer.send(&record)?;

@@ -7,7 +7,9 @@ use kafka::{
 };
 
 use crate::{
-    args::CliArgs, config::structs::Config, geospatial::read_neighborhoods,
+    args::CliArgs,
+    config::structs::Config,
+    geospatial::{get_geohashes_map_from_features, read_neighborhoods},
     utils::get_topics_names_for_neigborhood_wise_strategy,
 };
 
@@ -15,6 +17,7 @@ use self::{message::Message, strategies::SendStrategy};
 
 pub mod message;
 pub mod strategies;
+pub mod utils;
 
 mod macros {
     #[macro_export]
@@ -81,6 +84,11 @@ pub fn run_producer(config: Config, args: &CliArgs) -> Result<(), Box<dyn Error>
         }
     };
 
+    let neighborhoods_geohashes = match &features {
+        Some(f) => Some(get_geohashes_map_from_features(f)),
+        None => None,
+    };
+
     let mut consumer = make_consumer(config.clone())?;
     let mut producer = make_producer(config.clone())?;
 
@@ -117,7 +125,7 @@ pub fn run_producer(config: Config, args: &CliArgs) -> Result<(), Box<dyn Error>
                 &messages,
                 &output_topics,
                 partitions,
-                &features,
+                &neighborhoods_geohashes,
             )?;
             messages.clear();
             start_time = std::time::Instant::now();
