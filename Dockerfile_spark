@@ -1,0 +1,39 @@
+# Path: kafka.Dockerfile
+
+#FROM bitnami/bitnami/kafka:3.3
+FROM docker.io/bitnami/spark:3.3
+#FROM docker.io/bitnami/spark:2.4.3-r3
+USER root
+
+WORKDIR /
+
+RUN apt-get update
+RUN apt-get install -y \
+    build-essential \
+    libssl-dev \
+    pkg-config \
+    git \
+    vim \
+    curl
+
+## Update new packages
+RUN apt-get update
+
+#Install Anaconda
+RUN curl -s https://3230d63b5fc54e62148e-c95ac804525aac4b6dba79b00b39d1d3.ssl.cf1.rackcdn.com/Anaconda3-2.3.0-Linux-x86_64.sh -o anaconda.sh
+RUN chmod a+x anaconda.sh
+RUN ./anaconda.sh -b
+RUN ./anaconda3/bin/conda install -y -q ipython notebook
+
+# create conda environment named 'cloud_analytics'
+RUN conda create -y -q -n cloud_analytics
+# activate the environment
+RUN echo "conda activate cloud_analytics" > ~/.bashrc
+# install python packages
+RUN conda install -y -q -n cloud_analytics -c conda-forge \
+    pyspark \
+    geohash2
+
+COPY data/china /data/china
+COPY cloud_analytics /cloud_analytics
+COPY libraries /libraries

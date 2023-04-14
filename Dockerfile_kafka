@@ -1,0 +1,37 @@
+# Path: kafka.Dockerfile
+
+#FROM bitnami/bitnami/kafka:3.3
+FROM docker.io/bitnami/kafka:3.3
+USER root
+
+WORKDIR /
+
+RUN apt-get update
+RUN apt-get install -y \
+    build-essential \
+    libssl-dev \
+    pkg-config \
+    vim \
+    git \
+    curl
+
+## Update new packages
+RUN apt-get update
+
+# Get Rust
+RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
+
+RUN echo 'source $HOME/.cargo/env' >> $HOME/.bashrc
+
+COPY data/china /data/china
+COPY kafka-producer-rs /kafka-producer-rs
+COPY kafka-edge-bin /kafka-edge-bin
+
+WORKDIR /kafka-producer-rs
+RUN cargo build --release
+# run the binary
+RUN ./target/release/kafka-producer-rs edit_config -f /kafka-producer-rs/producer_config.toml
+RUN ./target/release/kafka-producer-rs create_topic
+
+#RUN cd /kafka-producer-rs && cargo build --release
+#RUN cd /kafka-edge-bin && cargo build --release
