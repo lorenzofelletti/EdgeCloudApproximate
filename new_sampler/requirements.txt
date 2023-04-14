@@ -1,3 +1,0 @@
-geohash2
-pandas
-kafka-python
