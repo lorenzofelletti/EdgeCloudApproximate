@@ -20,62 +20,24 @@ pub fn get_topics_names_for_neigborhood_wise_strategy(
 ) -> Vec<String> {
     let mut res = vec![];
 
-    for i in 1..=features.len() {
-        res.push(format!("{}{i}", config.data_out.target_topic))
+    for feature in features {
+        let neighborhood = feature
+            .properties
+            .clone()
+            .unwrap()
+            .get("NAME")
+            .expect("NAME property not found in feature")
+            .to_string();
+
+        res.push(get_topic_name_from_neighborhood_name(
+            &config,
+            &neighborhood,
+        ));
     }
 
     res
 }
 
-#[cfg(test)]
-mod tests {
-    use std::time::Duration;
-
-    use crate::kafka_producer::strategies::SamplingStrategy;
-
-    use super::*;
-
-    fn generate_mock_conf() -> Config {
-        use crate::config::structs::{DataIn, DataOut, Kafka};
-        Config {
-            kafka: Kafka {
-                zookeeper: vec!["".to_owned()],
-                brokers: vec!["".to_owned()],
-            },
-            data_in: DataIn {
-                source_topic: "source".to_owned(),
-                consumer_group: "cons".to_owned(),
-            },
-            data_out: DataOut {
-                target_topic: "target".to_owned(),
-                send_every_ms: Duration::from_millis(1),
-                send_strategy: crate::kafka_producer::strategies::SendStrategy::NeighborhoodWise,
-                neighborhoods_file: Some(PathBuf::from("")),
-                sampling_strategy: SamplingStrategy::Random,
-            },
-        }
-    }
-
-    fn generate_mock_features_vec() -> Vec<geojson::Feature> {
-        vec![
-            geojson::Feature::default(),
-            geojson::Feature::default(),
-            geojson::Feature::default(),
-        ]
-    }
-
-    #[test]
-    pub fn test_get_topics_names_for_neigborhood_wise_strategy() {
-        let cfg = generate_mock_conf();
-        let features = generate_mock_features_vec();
-        let topics_names = get_topics_names_for_neigborhood_wise_strategy(&cfg, &features);
-
-        assert_eq!(3, topics_names.len());
-        for i in 0..topics_names.len() {
-            assert_eq!(
-                format!("{}{}", cfg.data_out.target_topic, i + 1),
-                topics_names[i]
-            );
-        }
-    }
+pub fn get_topic_name_from_neighborhood_name(config: &Config, neighborhood: &String) -> String {
+    format!("{}_{}", config.data_out.target_topic, neighborhood)
 }

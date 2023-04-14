@@ -80,9 +80,15 @@ impl SendStrategy {
     ) -> Result<(), Box<dyn std::error::Error>> {
         match self {
             SendStrategy::NeighborhoodWise => {
-                let topic = topics.first().expect("No topic given!");
                 let mut neighborhood_messages: HashMap<String, Vec<&Message>> = HashMap::new();
                 let neigborhoods_geohases = neighborhood_geohases.clone().unwrap();
+
+                // map each neighborhood to a topic name (topic contains the name of the neighborhood)
+                let mut neighborhood_topics: HashMap<String, String> = HashMap::new();
+                for key in neigborhoods_geohases.keys() {
+                    let corresp_topic = topics.iter().find(|&t| t.contains(key)).unwrap();
+                    neighborhood_topics.insert(key.clone(), corresp_topic.clone());
+                }
 
                 // group messages by neighborhood
                 for msg in messages {
@@ -97,18 +103,18 @@ impl SendStrategy {
                                 None
                             }
                         }));
+                    let topic = skip_none!(neighborhood_topics.get(neighborhood));
 
                     neighborhood_messages
-                        .entry(neighborhood.to_string())
+                        .entry(topic.clone())
                         .and_modify(|v| v.push(msg))
                         .or_insert(Vec::new());
                 }
 
                 // send messages to their respective neighborhood
-                for (idx, (_neighborhood, messages)) in neighborhood_messages.iter().enumerate() {
-                    let topic = format!("{}{}", topic, idx + 1);
-
+                for (_idx, (neighborhood, messages)) in neighborhood_messages.iter().enumerate() {
                     for (_, msg) in messages.iter().enumerate() {
+                        let topic = skip_none!(neighborhood_topics.get(neighborhood));
                         // create a record
                         let record = create_record!(topic, msg);
 

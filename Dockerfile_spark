@@ -20,19 +20,19 @@ RUN apt-get install -y \
 RUN apt-get update
 
 #Install Anaconda
-RUN curl -s https://3230d63b5fc54e62148e-c95ac804525aac4b6dba79b00b39d1d3.ssl.cf1.rackcdn.com/Anaconda3-2.3.0-Linux-x86_64.sh -o anaconda.sh
+RUN curl -s https://repo.anaconda.com/archive/Anaconda3-2023.03-Linux-x86_64.sh -o anaconda.sh
 RUN chmod a+x anaconda.sh
-RUN ./anaconda.sh -b
-RUN ./anaconda3/bin/conda install -y -q ipython notebook
+#RUN ./anaconda.sh -b
+#RUN ./anaconda3/bin/conda install -y -q ipython notebook
 
 # create conda environment named 'cloud_analytics'
-RUN conda create -y -q -n cloud_analytics
+#RUN conda create -y -q -n cloud_analytics
 # activate the environment
-RUN echo "conda activate cloud_analytics" > ~/.bashrc
+#RUN echo "conda activate cloud_analytics" > ~/.bashrc
 # install python packages
-RUN conda install -y -q -n cloud_analytics -c conda-forge \
-    pyspark \
-    geohash2
+#RUN conda install -y -q -n cloud_analytics -c conda-forge \
+#    pyspark \
+#    geohash2
 
 COPY data/china /data/china
 COPY cloud_analytics /cloud_analytics

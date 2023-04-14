@@ -21,17 +21,17 @@ RUN apt-get update
 # Get Rust
 RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
 
-RUN echo 'source $HOME/.cargo/env' >> $HOME/.bashrc
+RUN echo 'source /.cargo/env' >> /.bashrc
+#RUN source /.cargo/env
 
 COPY data/china /data/china
 COPY kafka-producer-rs /kafka-producer-rs
 COPY kafka-edge-bin /kafka-edge-bin
 
 WORKDIR /kafka-producer-rs
-RUN cargo build --release
-# run the binary
-RUN ./target/release/kafka-producer-rs edit_config -f /kafka-producer-rs/producer_config.toml
-RUN ./target/release/kafka-producer-rs create_topic
+#RUN cargo build --release
+# run the binary to create config and topic
+#RUN ./target/release/kafka-producer-rs edit_config -f /kafka-producer-rs/producer_config.toml
+#RUN ./target/release/kafka-producer-rs create_topic
 
-#RUN cd /kafka-producer-rs && cargo build --release
-#RUN cd /kafka-edge-bin && cargo build --release
+CMD cd /kafka-producer-rs && cargo build --release

@@ -1,4 +1,4 @@
-use std::{time::Duration, path::PathBuf};
+use std::{path::PathBuf, time::Duration};
 
 use crate::kafka_producer::strategies::{SamplingStrategy, SendStrategy};
 

@@ -1,5 +1,5 @@
 use geohash::{Coord, GeohashError};
-use geojson::Feature;
+
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Error, Value};
 
