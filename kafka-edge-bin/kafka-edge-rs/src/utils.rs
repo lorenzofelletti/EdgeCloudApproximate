@@ -39,5 +39,7 @@ pub fn get_topics_names_for_neigborhood_wise_strategy(
 }
 
 pub fn get_topic_name_from_neighborhood_name(config: &Config, neighborhood: &String) -> String {
+    // remove from the neighborhood name the spaces and the quotes
+    let neighborhood = neighborhood.replace(" ", "").replace("\"", "");
     format!("{}_{}", config.data_out.target_topic, neighborhood)
 }
