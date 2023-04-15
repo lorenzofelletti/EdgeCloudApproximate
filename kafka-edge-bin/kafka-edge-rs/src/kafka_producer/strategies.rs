@@ -80,8 +80,10 @@ impl SendStrategy {
     ) -> Result<(), Box<dyn std::error::Error>> {
         match self {
             SendStrategy::NeighborhoodWise => {
+                println!("Using NeighborhoodWise strategy");
                 let mut neighborhood_messages: HashMap<String, Vec<&Message>> = HashMap::new();
                 let neigborhoods_geohases = neighborhood_geohases.clone().unwrap();
+                println!("neighs: {:?}", neigborhoods_geohases.keys());
 
                 // map each neighborhood to a topic name (topic names and neighborhood names iterate in parallel)
                 let neighborhood_topics: HashMap<String, String> = neigborhoods_geohases
@@ -90,8 +92,16 @@ impl SendStrategy {
                     .map(|(n, t)| (n.clone(), t.clone()))
                     .collect();
 
+                // initialize the neighborhood_messages hashmap
+                for topic in topics {
+                    neighborhood_messages.insert(topic.clone(), Vec::new());
+                }
+
+                println!("neigh topics: {:?}", neighborhood_topics);
+
                 // group messages by neighborhood
                 for msg in messages {
+                    println!("iterating over message");
                     let msg_gh = skip_fail!(msg.geohash());
 
                     // find key that contains the geohash in its value vector
@@ -103,8 +113,9 @@ impl SendStrategy {
                                 None
                             }
                         }));
+                    println!("Found MSG neighborhood: {:?}", neighborhood);
                     let topic = skip_none!(neighborhood_topics.get(neighborhood));
-
+                    println!("Found MSG topic: {:?}", topic);
                     neighborhood_messages
                         .entry(topic.clone())
                         .and_modify(|v| v.push(msg))
@@ -112,14 +123,15 @@ impl SendStrategy {
                 }
 
                 // send messages to their respective neighborhood
-                for (_idx, (neighborhood, messages)) in neighborhood_messages.iter().enumerate() {
-                    for (_, msg) in messages.iter().enumerate() {
-                        let topic = skip_none!(neighborhood_topics.get(neighborhood));
+                for (_idx, (topic, messages)) in neighborhood_messages.iter().enumerate() {
+                    println!("Sending {} messages to topic: {:?}", messages.len(), topic);
+                    for msg in messages.iter() {
                         // create a record
                         let record = create_record!(topic, msg);
 
                         // send the record
                         producer.send(&record)?;
+                        println!("Sent");
                     }
                 }
                 Ok(())
