@@ -80,10 +80,8 @@ impl SendStrategy {
     ) -> Result<(), Box<dyn std::error::Error>> {
         match self {
             SendStrategy::NeighborhoodWise => {
-                println!("Using NeighborhoodWise strategy");
                 let mut neighborhood_messages: HashMap<String, Vec<&Message>> = HashMap::new();
                 let neigborhoods_geohases = neighborhood_geohases.clone().unwrap();
-                println!("neighs: {:?}", neigborhoods_geohases.keys());
 
                 // map each neighborhood to a topic name (topic names and neighborhood names iterate in parallel)
                 let neighborhood_topics: HashMap<String, String> = neigborhoods_geohases
@@ -97,11 +95,8 @@ impl SendStrategy {
                     neighborhood_messages.insert(topic.clone(), Vec::new());
                 }
 
-                println!("neigh topics: {:?}", neighborhood_topics);
-
                 // group messages by neighborhood
                 for msg in messages {
-                    println!("iterating over message");
                     let msg_gh = skip_fail!(msg.geohash());
 
                     // find key that contains the geohash in its value vector
@@ -113,9 +108,7 @@ impl SendStrategy {
                                 None
                             }
                         }));
-                    println!("Found MSG neighborhood: {:?}", neighborhood);
                     let topic = skip_none!(neighborhood_topics.get(neighborhood));
-                    println!("Found MSG topic: {:?}", topic);
                     neighborhood_messages
                         .entry(topic.clone())
                         .and_modify(|v| v.push(msg))
@@ -131,7 +124,6 @@ impl SendStrategy {
 
                         // send the record
                         producer.send(&record)?;
-                        println!("Sent");
                     }
                 }
                 Ok(())

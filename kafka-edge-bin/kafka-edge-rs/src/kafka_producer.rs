@@ -103,21 +103,16 @@ pub fn run_producer(config: Config, args: &CliArgs) -> Result<(), Box<dyn Error>
     let mut start_time = std::time::Instant::now();
     loop {
         for message_set in consumer.poll().unwrap().iter() {
-            println!("Received {} messages", message_set.messages().len());
             for message in message_set.messages().iter() {
                 let msg_str = String::from_utf8_lossy(&message.value).to_string();
-                println!("Message: {}", msg_str);
                 let message = skip_fail!(Message::json_deserialize(serde_json::Value::String(
                     msg_str
                 )));
-                println!("fiu! {:#?}", message);
                 messages.push(message);
             }
         }
         if start_time.elapsed().as_millis() >= config.data_out.send_every_ms.as_millis() {
-            println!("SENDIN {} messages", messages.len());
             sampling_strategy.sample(sampling_percentage, &mut messages);
-            println!("Aft sample SENDIN {} messages", messages.len());
             send_strategy.send(
                 &mut producer,
                 &messages,
