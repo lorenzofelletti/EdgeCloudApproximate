@@ -108,10 +108,7 @@ pub fn run_producer(config: Config, args: &CliArgs) -> Result<(), Box<dyn Error>
             println!("Received {} messages", message_set.messages().len());
 
             for message in message_set.messages().iter() {
-                let msg_str = String::from_utf8_lossy(&message.value).to_string();
-                let message = skip_fail!(Message::json_deserialize(serde_json::Value::String(
-                    msg_str
-                )));
+                let message = skip_fail!(Message::json_deserialize(message.value));
                 messages.push(message);
             }
         }

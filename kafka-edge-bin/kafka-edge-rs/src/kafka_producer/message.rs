@@ -26,8 +26,8 @@ impl Message {
     }
 
     /// Deserialize a JSON `Message`.
-    pub fn json_deserialize(message: Value) -> Result<Message, Error> {
-        serde_json::from_value(message)
+    pub fn json_deserialize(message: &[u8]) -> Result<Message, Error> {
+        serde_json::from_slice(message)
     }
 
     /// Calculate the geohash of the message.
