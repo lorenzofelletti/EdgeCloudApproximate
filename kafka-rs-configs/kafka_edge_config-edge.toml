@@ -1,0 +1,14 @@
+[kafka]
+zookeeper = [ "zookeeper:2181" ]
+brokers = [ "kafka:9092" ]
+
+[data_in]
+source_topic = "datain"
+consumer_group = "datain_cons"
+
+[data_out]
+target_topic = "dataout"
+send_every_ms = 1000
+send_strategy = "NeighborhoodWise"
+sampling_strategy = "Stratified"
+neighborhoods_file = /data/china/neighborhood/shenzhen_converted.geojson

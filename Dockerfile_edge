@@ -6,7 +6,6 @@ USER root
 
 WORKDIR /
 
-RUN mkdir kafka-producer-rs/
 RUN mkdir kafka-edge-bin/
 
 RUN apt-get update
@@ -28,19 +27,11 @@ RUN echo 'source /.cargo/env' >> /.bashrc
 ENV PATH="${PATH}:/.cargo/bin"
 
 COPY data/china /data/china
-COPY kafka-producer-rs /kafka-producer-rs
 COPY kafka-edge-bin /kafka-edge-bin
-
-# Build producer
-WORKDIR /kafka-producer-rs
-RUN cargo build --release
-RUN cp ./target/release/kafka-producer-rs /kafka-producer-rs
-# Copy config file
-COPY ./kafka-rs-configs/producer_config.toml /kafka-producer-rs/producer_config.toml
 
 # Build edge
 WORKDIR /kafka-edge-bin
 RUN cargo build --release
-RUN cp ./target/release/kafka-edge-rs /kafka-edge-bin/kafka-edge-rs
+RUN cp ./target/release/kafka-edge-rs ../kafka-edge-bin/kafka-edge-rs
 # Copy config file
-COPY ./kafka-rs-configs/kafka_edge_config-kafka.toml /kafka-edge-bin/kafka_edge_config.toml
+COPY ./kafka-rs-configs/kafka_edge_config-edge.toml /kafka-edge-bin/kafka_edge_config.toml

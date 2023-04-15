@@ -6,7 +6,6 @@ services:
   # Apache Spark      #
   # ----------------- #
   spark:
-    #image: docker.io/bitnami/spark:3.3
     build:
       context: .
       dockerfile: Dockerfile_spark
@@ -43,8 +42,7 @@ services:
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
   kafka:
-    #image: docker.io/bitnami/kafka:3.3
-    build:
+    build: 
       context: .
       dockerfile: Dockerfile_kafka
     user: root
@@ -52,6 +50,21 @@ services:
       - "9092:9092"
     environment:
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_BROKER_ID=0
       - ALLOW_PLAINTEXT_LISTENER=yes
     depends_on:
       - zookeeper
+  edge-1:
+    build:
+      context: .
+      dockerfile: Dockerfile_edge
+    user: root
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_BROKER_ID=1
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    depends_on:
+      - zookeeper
+      - kafka
