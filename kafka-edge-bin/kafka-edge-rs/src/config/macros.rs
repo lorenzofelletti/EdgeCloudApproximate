@@ -45,14 +45,3 @@ macro_rules! read_array_of_hosts {
         check_value_not_empty_or_has_empty_strings(&$key, stringify!($key))?;
     };
 }
-
-#[macro_export]
-macro_rules! read_path {
-    ($key:ident, $table_name:expr, $data:expr) => {
-        PathBuf::from(read_string_key_from_table(
-            $table_name,
-            stringify!($key),
-            &$data,
-        )?)
-    };
-}
