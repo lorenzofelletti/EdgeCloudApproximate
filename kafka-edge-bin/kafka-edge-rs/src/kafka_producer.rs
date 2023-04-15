@@ -2,14 +2,16 @@ use std::{error::Error, time::Duration, vec};
 
 use geojson::Feature;
 use kafka::{
-    consumer::{Consumer, MessageSet},
+    consumer::Consumer,
     producer::{Producer, RequiredAcks},
 };
+use log::warn;
 
 use crate::{
     args::CliArgs,
     config::structs::Config,
     geospatial::{get_geohashes_map_from_features, read_neighborhoods},
+    skip_fail,
     utils::get_topics_names_for_neigborhood_wise_strategy,
 };
 
@@ -42,19 +44,6 @@ fn make_consumer(config: Config) -> Result<Consumer, kafka::Error> {
         .with_group(config.data_in.consumer_group)
         .with_topic(config.data_in.source_topic)
         .create()
-}
-
-fn map_message_set_to_messages(message_set: &MessageSet) -> Vec<Message> {
-    let messages: Vec<Result<Message, serde_json::Error>> = message_set
-        .messages()
-        .iter()
-        .map(|m| Message::json_deserialize(m.value.into()))
-        .collect();
-    messages
-        .iter()
-        .filter(|m| m.is_ok())
-        .map(|m| m.as_ref().unwrap().clone())
-        .collect()
 }
 
 pub fn run_producer(config: Config, args: &CliArgs) -> Result<(), Box<dyn Error>> {
@@ -114,8 +103,12 @@ pub fn run_producer(config: Config, args: &CliArgs) -> Result<(), Box<dyn Error>
     let mut start_time = std::time::Instant::now();
     loop {
         for message_set in consumer.poll().unwrap().iter() {
-            for message in map_message_set_to_messages(&message_set) {
-                messages.push(message);
+            for message in message_set.messages().iter() {
+                let msg_str = String::from_utf8_lossy(&message.value).to_string();
+                let message = skip_fail!(Message::json_deserialize(serde_json::Value::String(
+                    msg_str
+                )));
+                messages.push(message.clone());
             }
         }
         if start_time.elapsed().as_millis() >= config.data_out.send_every_ms.as_millis() {
