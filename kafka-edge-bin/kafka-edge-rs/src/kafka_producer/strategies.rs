@@ -165,7 +165,18 @@ impl SamplingStrategy {
         }
     }
 
+    /// Samples the given messages using the given sampling percentage.
+    /// A sampling percentage of 0 means that all messages are kept.
+    /// A sampling percentage of 1 means that all messages are discarded.
+    ///
+    /// # Arguments
+    /// * `sampling_percentage` - The percentage of messages to keep.
+    /// * `messages` - The messages to sample.
+    ///
+    /// # Notes
+    /// The `messages` vector is modified in-place.
     pub fn sample(&self, sampling_percentage: f64, messages: &mut Vec<Message>) {
+        let sampling_percentage = 1.0 - sampling_percentage;
         let mut rng = rand::thread_rng();
         match self {
             SamplingStrategy::Random => {
