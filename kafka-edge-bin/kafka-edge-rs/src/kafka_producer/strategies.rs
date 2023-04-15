@@ -84,11 +84,20 @@ impl SendStrategy {
                 let neigborhoods_geohases = neighborhood_geohases.clone().unwrap();
 
                 // map each neighborhood to a topic name (topic contains the name of the neighborhood)
-                let mut neighborhood_topics: HashMap<String, String> = HashMap::new();
-                for key in neigborhoods_geohases.keys() {
-                    let corresp_topic = topics.iter().find(|&t| t.contains(key)).unwrap();
+                /*let mut neighborhood_topics: HashMap<String, String> = HashMap::new();
+                for (i, key) in neigborhoods_geohases.keys().enumerate() {
+                    // get element at index i
+                    let corresp_topic = topics
+                        .get(i)
+                        .expect("Topics and neighborhoods mismatch! This should not happen!");
                     neighborhood_topics.insert(key.clone(), corresp_topic.clone());
-                }
+                }*/
+                // use zip to create a map from the neighborhood name to the topic name
+                let neighborhood_topics: HashMap<String, String> = neigborhoods_geohases
+                    .keys()
+                    .zip(topics.iter())
+                    .map(|(n, t)| (n.clone(), t.clone()))
+                    .collect();
 
                 // group messages by neighborhood
                 for msg in messages {

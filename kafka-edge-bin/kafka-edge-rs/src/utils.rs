@@ -20,18 +20,10 @@ pub fn get_topics_names_for_neigborhood_wise_strategy(
 ) -> Vec<String> {
     let mut res = vec![];
 
-    for feature in features {
-        let neighborhood = feature
-            .properties
-            .clone()
-            .unwrap()
-            .get("NAME")
-            .expect("NAME property not found in feature")
-            .to_string();
-
+    for (i, _) in features.iter().enumerate() {
         res.push(get_topic_name_from_neighborhood_name(
             &config,
-            &neighborhood,
+            &i.to_string(),
         ));
     }
 
