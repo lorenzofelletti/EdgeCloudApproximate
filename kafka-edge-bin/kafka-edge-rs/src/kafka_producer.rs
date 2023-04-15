@@ -105,8 +105,6 @@ pub fn run_producer(config: Config, args: &CliArgs) -> Result<(), Box<dyn Error>
         for message_set in consumer.poll().unwrap().iter() {
             println!("Received {} messages", message_set.messages().len());
             for message in message_set.messages().iter() {
-                println!("Iterating");
-                println!("value: {:?}", &message.value);
                 let msg_str = String::from_utf8_lossy(&message.value).to_string();
                 println!("Message: {}", msg_str);
                 let message = skip_fail!(Message::json_deserialize(serde_json::Value::String(

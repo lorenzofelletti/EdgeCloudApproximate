@@ -15,6 +15,8 @@ mod subcommands;
 mod utils;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    env_logger::init();
+
     let config = load_config();
 
     let cli = CliArgs::parse();
