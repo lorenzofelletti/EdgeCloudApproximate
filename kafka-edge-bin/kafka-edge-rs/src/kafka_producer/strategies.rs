@@ -118,13 +118,11 @@ impl SendStrategy {
                 // send messages to their respective neighborhood
                 for (_idx, (topic, messages)) in neighborhood_messages.iter().enumerate() {
                     println!("Sending {} messages to topic: {:?}", messages.len(), topic);
-                    for msg in messages.iter() {
-                        // create a record
-                        let record = create_record!(topic, msg);
-
-                        // send the record
-                        producer.send(&record)?;
-                    }
+                    let records = messages
+                        .iter()
+                        .map(|msg| create_record!(topic, msg))
+                        .collect::<Vec<_>>();
+                    producer.send_all(&records)?;
                 }
                 Ok(())
             }
