@@ -100,9 +100,13 @@ pub fn run_producer(config: Config, args: &CliArgs) -> Result<(), Box<dyn Error>
 
     let mut messages: Vec<Message> = vec![];
 
+    println!("Starting to process messages...");
+
     let mut start_time = std::time::Instant::now();
     loop {
         for message_set in consumer.poll().unwrap().iter() {
+            println!("Received {} messages", message_set.messages().len());
+
             for message in message_set.messages().iter() {
                 let msg_str = String::from_utf8_lossy(&message.value).to_string();
                 let message = skip_fail!(Message::json_deserialize(serde_json::Value::String(
@@ -113,6 +117,9 @@ pub fn run_producer(config: Config, args: &CliArgs) -> Result<(), Box<dyn Error>
         }
         if start_time.elapsed().as_millis() >= config.data_out.send_every_ms.as_millis() {
             sampling_strategy.sample(sampling_percentage, &mut messages);
+
+            println!("Sampling done, sending {} messages", messages.len());
+
             send_strategy.send(
                 &mut producer,
                 &messages,
