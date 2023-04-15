@@ -62,7 +62,7 @@ pub struct TopicCreateArgs {
     /// Use it to set the topic's replication factor
     pub replication_factor: NonZeroU32,
 
-    #[arg(short, long, required = true)]
+    #[arg(short, long, default_value_t = String::from("1"))]
     /// The number of partitons of the OUT topic
     pub partitions: String,
 
