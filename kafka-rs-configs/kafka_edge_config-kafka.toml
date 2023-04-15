@@ -11,4 +11,4 @@ target_topic = "dataout"
 send_every_ms = 1000
 send_strategy = "NeighborhoodWise"
 sampling_strategy = "Stratified"
-neighborhoods_file = /data/china/neighborhood/shenzhen_converted.geojson
+neighborhoods_file = "/data/china/neighborhood/shenzhen_converted.geojson"

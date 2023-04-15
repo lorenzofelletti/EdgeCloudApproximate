@@ -5,7 +5,7 @@ import pyspark.sql.functions as F
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType, TimestampType, LongType, DoubleType
 
 KAFKA_BOOTSTRAP_SERVERS = "kafka:9092"
-KAFKA_TOPIC = "datain"
+KAFKA_TOPIC = "dataout*"
 FILE_PATH = "/data/china/neighborhood"
 OUTPUT_PATH = "/results/"
 
@@ -23,7 +23,7 @@ spark: SparkSession = SparkSession.builder.appName(
 df_traffic_stream = spark\
     .readStream.format("kafka")\
     .option("kafka.bootstrap.servers", KAFKA_BOOTSTRAP_SERVERS)\
-    .option("subscribe", KAFKA_TOPIC)\
+    .option("subscribePattern", KAFKA_TOPIC)\
     .option("startingOffsets", "earliest")\
     .load()
 
