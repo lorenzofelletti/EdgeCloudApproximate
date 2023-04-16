@@ -25,6 +25,6 @@ def process_data(latest_file_name):
         N = decoded['n']
         S = decoded['s']
 
-        folium.Rectangle(bounds=[[S, W], [N, E]], color=color, fill=True, fill_color=color, popup=row['geohash']).add_to(map)
+        folium.Rectangle(bounds=[[S, W], [N, E]], color=color, fill=True, fill_color=color, popup="%.2f" % round(row['avg_speed'], 2)).add_to(map)
     
     map.save('templates/map.html')
