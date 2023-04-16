@@ -44,3 +44,8 @@ RUN cargo build --release
 RUN cp ./target/release/kafka-edge-rs /kafka-edge-rs
 # Copy config file
 COPY ./kafka-rs-configs/kafka_edge_config-kafka.toml /kafka_edge_config.toml
+
+# Copy startup script
+WORKDIR /
+COPY ./kafka-rs-configs/startup-kafka.sh /startup.sh
+RUN chmod +x /startup.sh

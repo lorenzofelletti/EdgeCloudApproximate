@@ -9,7 +9,7 @@ partitions_to_consume = [ "1" ]
 
 [data_out]
 target_topic = "dataout"
-send_every_ms = 1000
+send_every_ms = 10000
 send_strategy = "NeighborhoodWise"
 sampling_strategy = "Stratified"
 neighborhoods_file = "/data/china/neighborhood/shenzhen_converted.geojson"
