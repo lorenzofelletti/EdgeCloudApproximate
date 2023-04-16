@@ -43,7 +43,10 @@ fn make_consumer(config: Config) -> Result<Consumer, kafka::Error> {
         .with_fallback_offset(kafka::consumer::FetchOffset::Earliest)
         .with_offset_storage(kafka::consumer::GroupOffsetStorage::Kafka)
         .with_group(config.data_in.consumer_group)
-        .with_topic(config.data_in.source_topic)
+        .with_topic_partitions(
+            config.data_in.source_topic,
+            &config.data_in.partitions_to_consume,
+        )
         .create()
 }
 

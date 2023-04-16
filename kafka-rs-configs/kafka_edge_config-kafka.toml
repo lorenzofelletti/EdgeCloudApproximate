@@ -5,6 +5,7 @@ brokers = [ "localhost:9092" ]
 [data_in]
 source_topic = "datain"
 consumer_group = "datain_cons"
+partitions_to_consume = [ "0" ]
 
 [data_out]
 target_topic = "dataout"

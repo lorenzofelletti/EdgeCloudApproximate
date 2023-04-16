@@ -119,3 +119,10 @@ pub fn from_vec_of_value_to_vec_of_string(vec_of_value: &Vec<Value>) -> Vec<Stri
         .map(|x| x.as_str().unwrap_or_default().to_owned())
         .collect()
 }
+
+pub fn from_vec_of_string_to_vec_of_i32(vec_of_string: &Vec<String>) -> Vec<i32> {
+    vec_of_string
+        .into_iter()
+        .map(|x| x.parse::<i32>().unwrap_or_default())
+        .collect()
+}

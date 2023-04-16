@@ -16,8 +16,9 @@ use self::{
     errors::{ConfigurationError, ErrorType},
     structs::{Config, DataIn, DataOut, Kafka},
     utils::{
-        check_value_not_empty_or_has_empty_strings, from_vec_of_value_to_vec_of_string, get_table,
-        read_array_key_from_table, read_integer_key_from_table, read_string_key_from_table,
+        check_value_not_empty_or_has_empty_strings, from_vec_of_string_to_vec_of_i32,
+        from_vec_of_value_to_vec_of_string, get_table, read_array_key_from_table,
+        read_integer_key_from_table, read_string_key_from_table,
     },
 };
 
@@ -44,9 +45,15 @@ fn parse_data_in_table(config: &Value) -> Result<DataIn, ConfigurationError> {
 
     let consumer_group = read_string_key_from_table(table_name, "consumer_group", &data)?;
 
+    let partitions_to_consume =
+        read_array_key_from_table(table_name, "partitions_to_consume", &data)?;
+    let partitions_to_consume = from_vec_of_value_to_vec_of_string(partitions_to_consume);
+    let partitions_to_consume = from_vec_of_string_to_vec_of_i32(&partitions_to_consume);
+
     Ok(DataIn {
         source_topic,
         consumer_group,
+        partitions_to_consume,
     })
 }
 

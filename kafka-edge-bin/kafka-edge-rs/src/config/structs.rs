@@ -12,6 +12,7 @@ pub struct Kafka {
 pub struct DataIn {
     pub source_topic: String,
     pub consumer_group: String,
+    pub partitions_to_consume: Vec<i32>,
 }
 
 #[derive(Debug, Clone)]
