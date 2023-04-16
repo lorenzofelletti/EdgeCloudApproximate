@@ -16,6 +16,7 @@ services:
       - '8080:8080'
       - '4040:4040'
       - '7077:7077'
+      - '5000:5000'
     volumes:
       - ./data:/data
       - ./src:/src
@@ -30,7 +31,7 @@ services:
 
     volumes:
       - ./data:/data
-      - ./src:/src 
+      - ./src:/src
 
   # ----------------- #
   # Apache Kafka      #
@@ -42,7 +43,7 @@ services:
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
   kafka:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile_kafka
     user: root
