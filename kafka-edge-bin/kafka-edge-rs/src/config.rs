@@ -66,11 +66,8 @@ fn parse_data_out_table(config: &Value) -> Result<DataOut, ConfigurationError> {
         "neighborhoodwise" => Ok(SendStrategy::NeighborhoodWise)
     };
 
-    let nf = read_string_key_from_table(table_name, "neighborhoods_file", &data);
-    let neighborhoods_file = match nf {
-        Ok(nf) => Some(PathBuf::from(nf)),
-        Err(_) => None,
-    };
+    let nf = read_string_key_from_table(table_name, "neighborhoods_file", &data)?;
+    let neighborhoods_file = PathBuf::from(nf);
 
     read_string_with_match! {
         sampling_strategy,

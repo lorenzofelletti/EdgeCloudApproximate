@@ -11,6 +11,7 @@ use crate::{
     args::CliArgs,
     config::structs::Config,
     geospatial::{get_geohashes_map_from_features, read_neighborhoods},
+    kafka_producer::message::MessageTrait,
     skip_fail,
     utils::get_topics_names_for_neigborhood_wise_strategy,
 };
@@ -56,27 +57,18 @@ pub fn run_producer(config: Config, args: &CliArgs) -> Result<(), Box<dyn Error>
     }
     .ok_or("Unrecognized strategy")?;
 
-    let mut features: Option<Vec<Feature>> = None;
+    let features: Vec<Feature> = read_neighborhoods(&config.data_out.neighborhoods_file)?;
 
     let output_topics = match send_strategy {
         SendStrategy::NeighborhoodWise => {
-            features =
-                Some(read_neighborhoods(
-                    &config.clone().data_out.neighborhoods_file.expect(
-                        "Neighborhoods file must exists for this NeighborhooWise strategy!",
-                    ),
-                )?);
-            get_topics_names_for_neigborhood_wise_strategy(&config, &features.clone().unwrap())
+            get_topics_names_for_neigborhood_wise_strategy(&config, &features)
         }
         _ => {
             vec![config.data_out.target_topic.clone()]
         }
     };
 
-    let neighborhoods_geohashes = match &features {
-        Some(f) => Some(get_geohashes_map_from_features(f)),
-        None => None,
-    };
+    let neighborhoods_geohashes = get_geohashes_map_from_features(&features);
 
     let mut consumer = make_consumer(config.clone())?;
     let mut producer = make_producer(config.clone())?;

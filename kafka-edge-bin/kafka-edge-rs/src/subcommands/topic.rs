@@ -71,11 +71,7 @@ pub fn topic_create(config: &Config, args: &TopicCreateArgs) -> Result<(), Box<d
     // get the right neighborhood file
     let file = match &args.neighborhood_file {
         Some(file) => PathBuf::from(file),
-        None => config
-            .data_out
-            .neighborhoods_file
-            .clone()
-            .expect("Neigborhood file not supplied and not found in config TOML"),
+        None => config.data_out.neighborhoods_file.clone(),
     };
 
     let neighborhoods = read_neighborhoods(&file)?;

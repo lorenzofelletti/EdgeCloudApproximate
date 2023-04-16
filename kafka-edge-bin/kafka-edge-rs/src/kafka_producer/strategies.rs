@@ -6,7 +6,10 @@ use rand::Rng;
 
 use crate::{create_record, create_record_with_partition, skip_fail, skip_none};
 
-use super::message::Message;
+use super::{
+    message::{Message, MessageOut, MessageTrait},
+    utils::get_msg_neighborhood,
+};
 
 #[derive(Debug, Clone, Copy)]
 /// Enum of the possible strategies to send messages to Kafka partitions.
@@ -76,12 +79,12 @@ impl SendStrategy {
         messages: &Vec<Message>,
         topics: &[String],
         partitions: i32,
-        neighborhood_geohases: &Option<HashMap<String, Vec<String>>>,
+        neighborhood_geohases: &HashMap<String, Vec<String>>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         match self {
             SendStrategy::NeighborhoodWise => {
                 let mut neighborhood_messages: HashMap<String, Vec<&Message>> = HashMap::new();
-                let neigborhoods_geohases = neighborhood_geohases.clone().unwrap();
+                let neigborhoods_geohases = neighborhood_geohases.clone();
 
                 // map each neighborhood to a topic name (topic names and neighborhood names iterate in parallel)
                 let neighborhood_topics: HashMap<String, String> = neigborhoods_geohases
@@ -101,14 +104,8 @@ impl SendStrategy {
 
                     // find key that contains the geohash in its value vector
                     let neighborhood =
-                        skip_none!(neigborhoods_geohases.iter().find_map(|(key, &ref val)| {
-                            if val.iter().any(|gh| gh == &msg_gh) {
-                                Some(key)
-                            } else {
-                                None
-                            }
-                        }));
-                    let topic = skip_none!(neighborhood_topics.get(neighborhood));
+                        skip_none!(get_msg_neighborhood(&msg_gh, &neigborhoods_geohases));
+                    let topic = skip_none!(neighborhood_topics.get(&neighborhood));
                     neighborhood_messages
                         .entry(topic.clone())
                         .and_modify(|v| v.push(msg))
@@ -141,6 +138,11 @@ impl SendStrategy {
                             .try_into()
                             .unwrap();
                     }
+
+                    let msg_gh = skip_fail!(msg.geohash());
+                    let neighborhood =
+                        skip_none!(get_msg_neighborhood(&msg_gh, &neighborhood_geohases));
+                    let msg = MessageOut::from_message(&msg, neighborhood);
 
                     // create a record
                     let record = create_record_with_partition!(topic, msg, partition);

@@ -19,7 +19,7 @@ pub struct DataOut {
     pub target_topic: String,
     pub send_every_ms: Duration,
     pub send_strategy: SendStrategy,
-    pub neighborhoods_file: Option<PathBuf>,
+    pub neighborhoods_file: PathBuf,
     pub sampling_strategy: SamplingStrategy,
 }
 
