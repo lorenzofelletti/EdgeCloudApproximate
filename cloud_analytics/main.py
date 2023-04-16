@@ -1,5 +1,6 @@
 # spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0 cloud_analytics/main.py
 import time
+from datetime import datetime
 from pyspark.sql import SparkSession
 import pyspark.sql.functions as F
 from pyspark.sql.types import StructType, StructField, StringType, DoubleType, TimestampType, TimestampNTZType
@@ -55,10 +56,11 @@ for topic in KAFKA_TOPIC:
     prepare_query(spark, topic)
 
 while True:
-    time.sleep(60)
+    time.sleep(60 * 2)
     for topic in KAFKA_TOPIC:
         population = spark.sql("select * from query_" + topic)
         population.show(30)
-        filename = "avg_speed_" + topic + "_" + str(time.time())
+        filename = "avg_speed_" + topic + "_" + \
+            datetime.now().strftime("%Y%m%d_%H%M") + ".csv"
         population.write.format("csv").option("header", "true").mode(
             "overwrite").save(OUTPUT_PATH + filename)
