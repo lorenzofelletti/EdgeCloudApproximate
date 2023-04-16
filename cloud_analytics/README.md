@@ -1,15 +1,10 @@
-# Cloud Analytics Notebook
-This notebook reads from the Kafka topic (spatial1) and calculates the average speed in each geohash.
+# Cloud Analytics
+## Overview
 
-## How to start it
- - Run `conda activate ENV_NAME` (e.g. `base`)
- - Start livy server `~/apache-livy-0.7.1-incubating-bin/bin/livy-server start` (or whatever is your path to Livy)
- - Run `jupyter notebook`
- - Open notebook and run code.
+## How to run
+- Open a shell to the spark master node
+- Run `spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0 cloud_analytics/main.py`
 
-## How to open it in VSCode
-> First, make sure the necessary Jupyter extensions are installed.
- - Open the notebook file
- - In the top-right corner click to select a kernel to use for the notebook
- - Choose to use the Jupyter URL
- - Copy/paste the URL of the current Juptyer notebook.
+## Monitoring
+- Open the browser and go to `http://localhost:8080` to see the Spark UI
+- Open the browser and go to `http://localhost:4040` to see the Job UI
