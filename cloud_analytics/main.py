@@ -61,6 +61,6 @@ while True:
         population = spark.sql("select * from query_" + topic)
         population.show(30)
         filename = "avg_speed_" + topic + "_" + \
-            datetime.now().strftime("%Y%m%d_%H%M") + ".csv"
+            datetime.now().strftime("%Y%m%d_%H%M")
         population.write.format("csv").option("header", "true").mode(
             "overwrite").save(OUTPUT_PATH + filename)

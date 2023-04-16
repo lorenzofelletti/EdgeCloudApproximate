@@ -23,14 +23,13 @@ COPY data/china /data/china
 COPY cloud_analytics /cloud_analytics
 COPY libraries /libraries
 
-# Copy webapp
+# Setup flask web app
 COPY flask_data_viz /flask_data_viz
-# create venv
-ENV flask_app_path /flask_data_viz
-RUN python3 -m venv ${flask_app_path}/venv
-# install requirements
-RUN ${flask_app_path}/venv/bin/python -m pip install -r ${flask_app_path}/requirements.txt
+WORKDIR /flask_data_viz
+RUN chmod +x get_latest.sh
+RUN pip3 install -r requirements.txt
 
+WORKDIR /
 # Setup startup script
 COPY ./kafka-rs-configs/startup-spark.sh /startup.sh
 RUN chmod +x /startup.sh
