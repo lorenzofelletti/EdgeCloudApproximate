@@ -1,10 +1,11 @@
 # spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0 cloud_analytics/main.py
+import time
 from pyspark.sql import SparkSession
 import pyspark.sql.functions as F
 from pyspark.sql.types import StructType, StructField, StringType, DoubleType, TimestampType, TimestampNTZType
 
 KAFKA_BOOTSTRAP_SERVERS = "kafka:9092"
-KAFKA_TOPIC = "dataout*"
+KAFKA_TOPIC = "dataout.*"
 FILE_PATH = "/data/china/neighborhood"
 OUTPUT_PATH = "/results/"
 
@@ -51,6 +52,13 @@ gh_stream.writeStream\
     .outputMode("append")\
     .start()\
     .awaitTermination()
+
+# print the results every 30 s
+while True:
+    x = spark.sql("SELECT * FROM geohashAvg")
+    x.head(10)
+    x.show()
+    time.sleep(30)
 
 #nb_stream = df_stream.groupBy(
 #    "neighborhood").agg(F.avg("speed").alias("avg_speed"))
