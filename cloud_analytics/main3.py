@@ -25,10 +25,16 @@ def prepare_query(spark: SparkSession, topic_name: str):
     # json deserialie using schema
     df_stream = df_stream.select(F.from_json(
         F.col("value"), SCHEMA).alias("data")).select("data.*")
+    
+    df_stream = df_stream.withColumn("timestamp", F.current_timestamp())
+    
+    df_stream = df_stream.groupBy(
+        F.window("timestamp", "5 minutes", "1 minutes"),
+        F.col("geohash")).agg(F.avg("speed").alias("avg_speed"))
 
     # creates a write stream with the query name
     df_stream.writeStream.queryName(
-        "query_" + topic_name).format("memory").outputMode("append").start()
+        "query_" + topic_name).format("memory").outputMode("complete").start()
 
 
 SCHEMA = StructType([
@@ -52,13 +58,12 @@ for topic in KAFKA_TOPIC:
     prepare_query(spark, topic)
 
 while True:
-    time.sleep(60 * 2)
+    time.sleep(70)
     
     # for each table compute the average speed by geohash and union the results
     tot = None
     for topic in KAFKA_TOPIC:
-        df = spark.sql(
-            f"select geohash, avg(speed) as avg_speed from query_{topic} group by geohash")
+        df = spark.sql(f"select * from query_{topic}")
         if tot is None:
             tot = df
         else:

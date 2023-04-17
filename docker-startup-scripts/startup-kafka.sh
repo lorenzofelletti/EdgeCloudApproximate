@@ -1,5 +1,4 @@
 #!/bin/bash
-sleep 5
 ./kafka-producer-rs/kafka-producer-rs create_topic
 ./kafka-edge-rs topic create out --for-nbw-strat
 

@@ -20,6 +20,9 @@ KAFKA_BOOTSTRAP_SERVERS = "kafka:9092"
 
 OUTPUT_PATH = "/results/"
 
+TOPICS = ["dataout_1", "dataout_2", "dataout_3",
+          "dataout_4", "dataout_5", "dataout_6"]
+
 spark: SparkSession = SparkSession.builder.appName(
     "write_traffic_sensor_topic").getOrCreate()
 
@@ -29,7 +32,7 @@ spark.sparkContext.setLogLevel("WARN")
 df_stream = spark\
     .readStream.format("kafka")\
     .option("kafka.bootstrap.servers", KAFKA_BOOTSTRAP_SERVERS)\
-    .option("subscribePattern", "dataout_*")\
+    .option("subscribe", "dataout_*")\
     .option("startingOffsets", "earliest")\
     .load()
 # deserialize the data from kafka
@@ -50,7 +53,7 @@ df_stream.writeStream.queryName("lastTen").format("memory").outputMode("append")
 
 while True:
     time.sleep(30)
-    population = spark.sql(
+    df = spark.sql(
             f"select geohash, avg(speed) as avg_speed from query_{topic}group by geohash")
     df.show()
     print("Number of rows: ", df.count())
