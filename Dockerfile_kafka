@@ -32,14 +32,14 @@ COPY kafka-edge-bin /kafka-edge-bin
 # Build producer
 WORKDIR /kafka-producer-rs
 RUN cargo build --release
-RUN cp ./target/release/kafka-producer-rs /kafka-producer-rs
+RUN mv ./target/release/kafka-producer-rs /kafka-producer-rs
 # Copy config file
 COPY ./kafka-rs-configs/producer_config.toml /kafka-producer-rs/producer_config.toml
 
 # Build edge
 WORKDIR /kafka-edge-bin
 RUN cargo build --release
-RUN cp ./target/release/kafka-edge-rs /kafka-edge-rs
+RUN mv ./target/release/kafka-edge-rs /kafka-edge-rs
 # Copy config file
 COPY ./kafka-rs-configs/kafka_edge_config-kafka.toml /kafka_edge_config.toml
 
