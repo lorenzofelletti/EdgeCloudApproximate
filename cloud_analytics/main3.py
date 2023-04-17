@@ -11,7 +11,7 @@ KAFKA_TOPIC = ["dataout_1", "dataout_2", "dataout_3",
 
 OUTPUT_PATH = "/results/"
 
-
+# try .option("subscribe", "dataout_1,dataout_2,dataout_3,dataout_4,dataout_5,dataout_6")\
 def prepare_query(spark: SparkSession, topic_name: str):
     df_stream = spark\
         .readStream.format("kafka")\
@@ -29,12 +29,12 @@ def prepare_query(spark: SparkSession, topic_name: str):
     df_stream = df_stream.withColumn("timestamp", F.current_timestamp())
     
     df_stream = df_stream.groupBy(
-        F.window("timestamp", "5 minutes", "1 minutes"),
+        F.window("timestamp", "5 minutes"),
         F.col("geohash")).agg(F.avg("speed").alias("avg_speed"))
 
     # creates a write stream with the query name
-    df_stream.writeStream.queryName(
-        "query_" + topic_name).format("memory").outputMode("complete").start()
+    df_stream.writeStream\
+        .queryName("query_" + topic_name).format("memory").outputMode("update").start()
 
 
 SCHEMA = StructType([
@@ -57,9 +57,8 @@ spark.sparkContext.setLogLevel("WARN")
 for topic in KAFKA_TOPIC:
     prepare_query(spark, topic)
 
+time.sleep(60 * 6)
 while True:
-    time.sleep(70)
-    
     # for each table compute the average speed by geohash and union the results
     tot = None
     for topic in KAFKA_TOPIC:
@@ -70,3 +69,5 @@ while True:
             tot = tot.union(df)
     # save the results in a csv file
     filename = "avg_speed_" + time.time_ns()
+    
+    time.sleep(60 * 5)
