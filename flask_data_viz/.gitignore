@@ -1,3 +1,5 @@
 venv
-templates
 __pycache__
+
+templates
+!templates/index.html
