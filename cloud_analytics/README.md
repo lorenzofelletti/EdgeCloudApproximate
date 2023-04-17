@@ -1,5 +1,6 @@
 # Cloud Analytics
 ## Overview
+Creates a pyspark application that reads data from kafka, elaborates them to calculate the average speed of vehicles in a given geohash and writes the results in csv files saved locally.
 
 ## How to run
 - Open a shell to the spark master node
@@ -8,3 +9,4 @@
 ## Monitoring
 - Open the browser and go to `http://localhost:8080` to see the Spark UI
 - Open the browser and go to `http://localhost:4040` to see the Job UI
+- Open the browser and go to `http://localhost:5000` to see the Flask webapp.
