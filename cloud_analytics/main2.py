@@ -46,12 +46,12 @@ df_stream = df_stream.withWatermark("curr_timestamp", "10 minutes")
 # writeStream in append mode data in a rolling window of 10 minutes
 df_stream.writeStream.queryName("lastTen").format("memory").outputMode("append")\
     .trigger(processingTime="30 seconds")\
-    .option("checkpointLocation", "/tmp/checkpoint")\
     .start()
 
 while True:
     time.sleep(30)
-    df = spark.sql("select * from lastTen")
+    population = spark.sql(
+            f"select geohash, avg(speed) as avg_speed from query_{topic}group by geohash")
     df.show()
     print("Number of rows: ", df.count())
     filename = "avg_speed_" + \

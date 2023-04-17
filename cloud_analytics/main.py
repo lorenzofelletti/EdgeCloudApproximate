@@ -53,15 +53,15 @@ for topic in KAFKA_TOPIC:
 
 while True:
     time.sleep(60 * 2)
+    
+    # for each table compute the average speed by geohash and union the results
+    tot = None
     for topic in KAFKA_TOPIC:
-        #population = spark.sql("select * from query_" + topic)
-        # modify above row to group by geohash and calculate the average speed of each geohash
-        population = spark.sql(
-            f"select geohash, avg(speed) as avg_speed from query_{topic}group by geohash")
-
-        # print number of rows
-        print("Number of rows in " + topic + ": " + str(population.count()))
-        filename = "avg_speed_" + topic + "_" + \
-            datetime.now().strftime("%Y%m%d_%H%M")
-        population.write.format("csv").option("header", "true").mode(
-            "overwrite").save(OUTPUT_PATH + filename)
+        df = spark.sql(
+            f"select geohash, avg(speed) as avg_speed from query_{topic} group by geohash")
+        if tot is None:
+            tot = df
+        else:
+            tot = tot.union(df)
+    # save the results in a csv file
+    filename = "avg_speed_" + time.time_ns()
