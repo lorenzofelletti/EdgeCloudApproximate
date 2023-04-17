@@ -38,5 +38,5 @@ COPY ./kafka-rs-configs/kafka_edge_config-edge.toml /kafka_edge_config.toml
 
 # Copy startup script
 WORKDIR /
-COPY ./kafka-rs-configs/startup-edge.sh /startup.sh
+COPY ./docker-startup-scripts/startup-edge.sh /startup.sh
 RUN chmod +x /startup.sh

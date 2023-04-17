@@ -4,3 +4,7 @@ venv/
 target/
 __pycache__/
 
+# Ignore files in the config directory
+kafka-rs-configs/*
+# Except the template files
+!kafka-rs-configs/*TEMPLATE*

@@ -1,181 +1,25 @@
 # EdgeApproximate
 
 ## Environment Setup
-The tools we will use for big data processing are Spark and Kafka running on a Ubuntu VM. We will use the following tools to setup the environment:
-- Java 8
-- Scala 2.11.8
-- Spark 2.2.0
-- Kafka 2.7.0
-- Intellij IDEA
-- Anaconda 3.
-- Jupyter Notebook
+- Install Docker Desktop
+- Run `docker-compose up -d` in the root directory of the project
+- Enjoy!
 
-### Install VirtualBox and Create a Ubuntu VM
+## Containers Configuration
+- There are 5 containers in total
+  - One Spark Master
+  - One Spark Worker
+  - One Zookeeper node
+  - Two Kafka nodes
+    - Kafka (Main Kafka broker)
+    - Edge1 (Edge node).
 
-- Download VirtualBox from [here](https://www.virtualbox.org/wiki/Downloads)
-- Download Ubuntu 22.04 from [here](https://ubuntu.com/download/desktop)
+On the Spark master node, runs a pyspark script that continuously reads from the DATAOUT topic(s) of the Kafka broker and writes the processed data to a local directory. Also on the Spark master node, runs a Flask server that serves the processed data to the frontend. The Flask server is accessible at `localhost:5000`.
 
-### Install Java, Spark, and Scala
+On the Zookeeper node, runs a Zookeeper server (required by Kafka).
 
-- First, if you haven't done it, run `sudo apt-get update` and `sudo apt-get upgrade`
-- Install *Java*
-  - `sudo apt-get install openjdk-8-jdk`
-  - if `echo $JAVA_HOME` returns empty`
-    - add `export JAVA_HOME='/usr/lib/jvm/java-8-openjdk-amd64'` to *.bashrc*
-    - then run `source ~/.bashrc`
-    - run `java -version` to check if it's installed correctly
+On the Kafka node, two programs runs:
+- `kafka-producer-rs` -- A Rust program that reads from a local csv the data to distribute to the Kafka nodes via a DATAIN topic; simulating the data arriving to the edge nodes.
+- `kafka-edge-rs` -- A Rust program that reads from the DATAIN topic and writes to one or more DATAOUT topics (depending on the configuration); simulating being an edge node.
 
-- Install *Spark*
-  - download spark-hadoop 2.2.0 from [here](https://archive.apache.org/dist/spark/spark-2.2.0/spark-2.2.0-bin-hadoop2.7.tgz)
-  - create a folder `mkdir ~/work`
-  - extract spark-hadoop 2.2.0
-    - `tar xvf spark-2.2.0-bin-hadoop2.7.tgz`
-  - move spark to `work` folder
-      - `mv spark-2.2.0-bin-hadoop2.7 ~/work`
-  - add to *.bashrc*
-    - get your *username* by running `whoami`
-    - `export SPARK_HOME='/home/[username]/work/spark-2.2.0-bin-hadoop2.7'`
-    - and `export PATH=$SPARK_HOME/bin:$PATH`
-    - then run `source ~/.bashrc`
-
-- Install *Scala*
-  - go to [here](https://www.scala-lang.org/download/2.11.8.html) and download scala-2.11.8.tgz
-  - extract scala-2.11.8
-    - `tar xvf scala-2.11.8.tgz`
-  - move scala to `work` folder
-    - `mv scala-2.11.8 ~/work`
-  - if `which scala` returns empty
-    - add to *.bashrc*
-      - get your *username* by running `whoami`
-      - `export SCALA_HOME='/home/[username]/work/scala-2.11.8'`
-      - and `export PATH=$SCALA_HOME/bin:$PATH`
-    - then run `source ~/.bashrc`
-    - run `scala -version` to check if it's installed correctly
-
-### Download Intellij Idea
-Download Intellij Idea from [here](https://www.jetbrains.com/idea/download/#section=linux)
-
-### Install Kafka
-- Create Kafka user
-  - the last command changes the default shell for kafka to bash, which is more "comfortable" than sh
-```Bash
-sudo useradd kafka -m
-sudo passwd kafka
-sudo adduser kafka sudo
-sudo getent group sudo
-sudo usermod --shell /bin/bash kafka
-```
-- Switch to Kafka user
-  - `su -l kafka`
-- Install Kafka
-```Bash
-sudo apt install curl
-mkdir ~/Downloads
-curl "https://archive.apache.org/dist/kafka/2.7.0/kafka_2.12-2.7.0.tgz" -o ~/Downloads/kafka.tgz
-mkdir ~/kafka && cd ~/kafka
-tar -xvzf ~/Downloads/kafka.tgz --strip 1  
-```
-- to the bottom of *~/kafka/config/server.properties*
-  - add `delete.topic.enable = true`
-- edit */etc/systemd/system/zookeeper.service*
-```
-[Unit]
-Description=Apache Zookeeper server
-Documentation=http://zookeeper.apache.org
-Requires=network.target remote-fs.target
-After=network.target remote-fs.target
-
-[Service]
-Type=simple
-ExecStart=/home/kafka/kafka/bin/zookeeper-server-start.sh /home/kafka/kafka/config/zookeeper.properties
-ExecStop=/home/kafka/kafka/bin/zookeeper-server-stop.sh
-Restart=on-abnormal
-
-[Install]
-WantedBy=multi-user.target
-```
-- edit */etc/systemd/system/kafka.service*
- ```
-[Unit]
-Requires=zookeeper.service
-After=zookeeper.service
-
-[Service]
-Type=simple
-User=kafka
-ExecStart=/bin/sh -c '/home/kafka/kafka/bin/kafka-server-start.sh /home/kafka/kafka/config/server.properties > /home/kafka/kafka/kafka.log 2>&1'
-ExecStop=/home/kafka/kafka/bin/kafka-server-stop.sh
-Restart=on-abnormal
-
-[Install]
-WantedBy=multi-user.target
-```
-- Start kafka with `sudo systemctl start kafka`
-- To check if kafka is running, run `sudo systemctl status kafka`
-- (Optional) To start kafka on boot
-  - `sudo journalctl -u kafka`
-  - `sudo systemctl enable kafka`
-- (Info) To stop kafka
-  - `sudo systemctl stop kafka`
-
-### Install Jupyter
-> Important: Switch back to your user (`su -l [username]`)
-Install *Anaconda3* (version: Anaconda3-2020.02-Linux-x86_64.sh)
-- Download Anaconda3 from [here](https://repo.anaconda.com/archive/)
-- Install prerequisites
-  - `sudo 	apt-get install libgl1-mesa-glx libegl1-mesa libxrandr2 libxrandr2 libxss1 libxcursor1 libxcomposite1 libasound2 libxi6 libxtst6`
-  - Install Anaconda3
-    - `bash ~/Downloads/Anaconda3-2020.02-Linux-x86_64.sh`
-    - accept the license and install to default location
-    - choose to let conda modify your *.bashrc*
-      - if you didn't choose this option, run
-        - `eval "$(/home/[username]/anaconda3/bin/conda shell.[your_shell_name] hook)"`
-          - to check your username, run `whoami`
-          - to check your shell name, run `echo $SHELL` (e.g. bash)
-        - then run `conda init`
-    - `source ~/.bashrc`
-    - run `conda config --set auto_activate_base False`
-    - *Jupyter* comes with Anaconda3 (run `jupyter notebook` to start it)
-> Info: To activate conda environment, run `conda activate [environment_name]`.
-> The default environment is called `base`, which you can omit.
-> Without activating the environment, you can't use `jupyter`.
-
-### Install Sparkmagic
-Install sparkmagic
-- Run `pip install sparkmagic`
-- Make sure ipywidgets is correctly installed
-  - run `jupyter nbextension enable --py --sys-prefix widgetsnbextension`
-- To check your sparkmagic version, run `pip show sparkmagic`
-- Go to the folder shown in the output of the above command beside `Location:`
-  - e.g. `/home/[username]/anaconda3/lib/python3.7/site-packages/`
-- Then run the following commands 
-```
-sudo ~/anaconda3/bin/jupyter-kernelspec install ./sparkmagic/kernels/sparkkernel
-sudo ~/anaconda3/bin/jupyter-kernelspec install ./sparkmagic/kernels/pysparkkernel
-sudo ~/anaconda3/bin/jupyter-kernelspec install ./sparkmagic/kernels/sparkrkernel
-```
-- Install *Livy*
-  - download from [here](https://livy.incubator.apache.org/download/)
-  - `unzip ~/Downloads/livy-[version...].zip`
-  > To start Livy, run `~/apache-livy[version...]/bin/livy-server start`
-
-
-### Install Maven
-Install maven with: `sudo apt install maven`.
-Then check the installation with `mvn -version`.
-
-
-## Memo to Use the Environment
-List conda environments: `conda env list`.
-Start a conda env: `conda activate <ENV_NAME>` (empty for base)
-Deactivate a conda env: `conda deactivate`
-
-Start Jupyter: run `jupyter notebook` after activating the conda environment (like base env)
-To start Livy: run `~/apache-livy[version...]/bin/livy-server start`
-
-## Network Setup
-The setup includes, other than a VM with the setup described above, also other VMs, acting as Kafka producers, and with a simpler setup. The setup of these lighter VMs will be described later.
-The VMs communicate thanks to a network setup described [here](wiki/Network.md).
-
-## Kafka Setup
-In order to execute some of the programs contained in this repo, you need to follow the steps described [here](wiki/Kafka.md).
+On the Edge1 node, runs the same `kafka-edge-rs` program as the Kafka node, but withouth the `kafka-producer-rs` program (required only on one node).

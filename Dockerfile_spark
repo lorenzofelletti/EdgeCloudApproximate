@@ -31,6 +31,6 @@ RUN pip3 install -r requirements.txt
 
 WORKDIR /
 # Setup startup script
-COPY ./kafka-rs-configs/startup-spark.sh /startup.sh
+COPY ./docker-startup-scripts/startup-spark.sh /startup.sh
 RUN chmod +x /startup.sh
 
