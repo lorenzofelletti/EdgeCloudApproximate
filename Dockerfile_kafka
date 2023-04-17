@@ -1,7 +1,5 @@
-# Path: kafka.Dockerfile
-
-#FROM bitnami/bitnami/kafka:3.3
 FROM docker.io/bitnami/kafka:3.3
+
 USER root
 
 WORKDIR /
