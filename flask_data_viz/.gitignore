@@ -1,6 +1,7 @@
 venv
 __pycache__
 
-templates
+templates/*
 # Exclude index.html
 !templates/index.html
+!templates/waiting.html

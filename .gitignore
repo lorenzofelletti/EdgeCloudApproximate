@@ -8,3 +8,5 @@ __pycache__/
 kafka-rs-configs/*
 # Except the template files
 !kafka-rs-configs/*TEMPLATE*
+
+vol/*
