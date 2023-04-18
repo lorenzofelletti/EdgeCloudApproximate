@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Data Processing Results</title>
+</head>
+<body>
+    <h1>Data Processing Results</h1>
+    <h2>Average speed of cars in the last 10 minutes by geohash</h2>
+    <p>Latest update: {{ latest_update }}</p>
+    {% include '%s.html' %}
+    <ul>
+        {% for time in times %}
+            <li><a href="map.html?time={{ time }}">{{ time }}</a></li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
