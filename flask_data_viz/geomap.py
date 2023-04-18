@@ -15,16 +15,13 @@ def get_rectangles_bounds(gh):
     return [[S, W], [N, E]]
 
 
-def process_data(data: pd.DataFrame, time: str = None):
+def process_data(data: pd.DataFrame, time: str):
     # map from red to green based on the avg_speed field
-    cmap = linear.YlGn_09.scale(0, 70)
+    cmap = linear.RdYlGn_09.scale(0, 70)
     # add color field to the data
     data['color'] = data['avg_speed'].apply(lambda x: cmap(x))
     data['lat'] = data['geohash'].apply(lambda x: geohash.decode(x)[0])
     data['lon'] = data['geohash'].apply(lambda x: geohash.decode(x)[1])
-
-    if time is None:
-        time = data['time'][0]
     
     data = data[data['time'] == time]        
 

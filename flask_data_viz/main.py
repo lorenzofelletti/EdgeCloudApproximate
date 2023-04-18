@@ -35,12 +35,18 @@ def home():
 
     # get time if provided
     time = request.args.get('time')
+    if time is not None:
+        time = time.replace('_', ' ')
+    else:
+        time = data['time'][0]
     
     process_data(data, time)
 
     available_times = data['time'].unique()
+    # convert whitespaces to underscores
+    available_times = [t.replace(' ', '_') for t in available_times]
 
-    return render_template('index.html', available_times=available_times, latest_update=update_time)
+    return render_template('index.html', time=time, times=available_times, latest_update=update_time)
 
 
 if __name__ == "__main__":

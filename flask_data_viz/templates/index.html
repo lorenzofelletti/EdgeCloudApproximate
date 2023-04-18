@@ -3,12 +3,14 @@
 <head>
     <title>Data Processing Results</title>
 </head>
-<body>
+<body style="font-family: sans-serif;">
     <h1>Data Processing Results</h1>
-    <h2>Average speed of cars in the last 10 minutes by geohash</h2>
-    <p>Latest update: {{ latest_update }}</p>
-    {% include '%s.html' %}
-    <ul>
+    <h2>Average speed of cars in the past 30 preceding: {{ time }}</h2>
+    <p>Latest data update: {{ latest_update }}</p>
+    <div style="height: 70%;width: 90%;">
+        {% include 'map.html' %}
+    </div>
+    <ul style="height: 10%;overflow: scroll;">
         {% for time in times %}
             <li><a href="map.html?time={{ time }}">{{ time }}</a></li>
         {% endfor %}
