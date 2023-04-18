@@ -27,4 +27,5 @@ RUN pip3 install -r requirements.txt
 WORKDIR /
 # Setup startup script
 COPY ./docker-startup-scripts/startup-spark.sh /startup.sh
+COPY ./docker-startup-scripts/get_latest.sh /get_latest.sh
 RUN chmod +x /startup.sh

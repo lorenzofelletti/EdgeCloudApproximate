@@ -1,30 +1,41 @@
 import folium
 import geohash
 import pandas as pd
+from branca.colormap import linear
+
+def get_rectangles_bounds(gh):
+    decoded = geohash.bbox(gh)
+    if decoded is None:
+        return None
+    W = decoded['w']
+    E = decoded['e']
+    N = decoded['n']
+    S = decoded['s']
+
+    return [[S, W], [N, E]]
 
 
-def process_data(latest_file_name):
-    data = pd.read_csv(latest_file_name)
+def process_data(data: pd.DataFrame, time: str = None):
+    # map from red to green based on the avg_speed field
+    cmap = linear.YlGn_09.scale(0, 70)
+    # add color field to the data
+    data['color'] = data['avg_speed'].apply(lambda x: cmap(x))
     data['lat'] = data['geohash'].apply(lambda x: geohash.decode(x)[0])
     data['lon'] = data['geohash'].apply(lambda x: geohash.decode(x)[1])
 
-    # Get the maximum speed in the dataset
-    max_speed = data['avg_speed'].max()
+    if time is None:
+        time = data['time'][0]
+    
+    data = data[data['time'] == time]        
 
     # Create a map centered on the first geohash in the dataset
     map = folium.Map(location=[data['lat'][0], data['lon'][0]], zoom_start=10)
 
     for _, row in data.iterrows():
-        # get the color of the marker based on the average speed
-        color = (row['avg_speed'] / max_speed) * 255
-        color = f'rgb({255 - color}, {color}, 0)'
+        bounds = get_rectangles_bounds(row['geohash'])
+        if bounds is None:
+            continue
 
-        decoded = geohash.bbox(row['geohash'])
-        W = decoded['w']
-        E = decoded['e']
-        N = decoded['n']
-        S = decoded['s']
-
-        folium.Rectangle(bounds=[[S, W], [N, E]], color=color, fill=True, fill_color=color, popup="%.2f" % round(row['avg_speed'], 2)).add_to(map)
+        folium.Rectangle(bounds=bounds, color=row['color'], fill=True, fill_color=row['color'], popup="%.2f" % round(row['avg_speed'], 2)).add_to(map)
     
     map.save('templates/map.html')
