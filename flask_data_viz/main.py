@@ -7,9 +7,15 @@ from geomap import process_data
 
 app = Flask(__name__)
 
+def get_latest():
+    '''Run the get_latest.sh script to get the latest data'''
+    os.system('./get_latest.sh')
+
 
 @app.route('/', methods=['GET'])
 def home():
+    get_latest()
+
     update_time = None
     # get time from latest_meta.txt
     try:
