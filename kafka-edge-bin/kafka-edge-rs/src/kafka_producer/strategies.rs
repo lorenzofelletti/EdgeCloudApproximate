@@ -4,12 +4,12 @@ use kafka::producer::{Producer, Record};
 use log::warn;
 use rand::Rng;
 
-use crate::{create_record, create_record_with_partition, skip_fail, skip_none};
-
-use super::{
-    message::{Message, MessageOut, MessageTrait},
-    utils::get_msg_neighborhood,
+use crate::{
+    create_record, create_record_with_partition, geospatial::invert_neighborhood_geohashes_map,
+    skip_fail, skip_none,
 };
+
+use super::message::{Message, MessageOut, MessageTrait};
 
 #[derive(Debug, Clone, Copy)]
 /// Enum of the possible strategies to send messages to Kafka partitions.
@@ -79,15 +79,16 @@ impl SendStrategy {
         messages: &Vec<Message>,
         topics: &[String],
         partitions: i32,
-        neighborhood_geohases: &HashMap<String, Vec<String>>,
+        neighborhood_geohashes: &HashMap<String, Vec<String>>,
     ) -> Result<(), Box<dyn std::error::Error>> {
+        // invert the neighborhood_geohashes map to be able to find the neighborhood of a given geohash in O(1)
+        let geohash_neighborhood = invert_neighborhood_geohashes_map(&neighborhood_geohashes);
         match self {
             SendStrategy::NeighborhoodWise => {
                 let mut neighborhood_messages: HashMap<String, Vec<MessageOut>> = HashMap::new();
-                let neigborhoods_geohases = neighborhood_geohases.clone();
 
                 // map each neighborhood to a topic name (topic names and neighborhood names iterate in parallel)
-                let neighborhood_topics: HashMap<String, String> = neigborhoods_geohases
+                let neighborhood_topics: HashMap<String, String> = neighborhood_geohashes
                     .keys()
                     .zip(topics.iter())
                     .map(|(n, t)| (n.clone(), t.clone()))
@@ -102,9 +103,7 @@ impl SendStrategy {
                 for msg in messages {
                     let msg_gh = skip_fail!(msg.geohash());
 
-                    // find key that contains the geohash in its value vector
-                    let neighborhood =
-                        skip_none!(get_msg_neighborhood(&msg_gh, &neigborhoods_geohases));
+                    let neighborhood = skip_none!(geohash_neighborhood.get(&msg_gh)).to_owned();
                     let topic = skip_none!(neighborhood_topics.get(&neighborhood));
 
                     let msg = MessageOut::from_message(&msg, neighborhood);
@@ -143,8 +142,7 @@ impl SendStrategy {
                     }
 
                     let msg_gh = skip_fail!(msg.geohash());
-                    let neighborhood =
-                        skip_none!(get_msg_neighborhood(&msg_gh, &neighborhood_geohases));
+                    let neighborhood = skip_none!(geohash_neighborhood.get(&msg_gh)).to_owned();
                     let msg = MessageOut::from_message(&msg, neighborhood);
 
                     // create a record

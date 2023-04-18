@@ -110,3 +110,39 @@ pub fn get_geohashes_map_from_features(features: &Vec<Feature>) -> HashMap<Strin
     }
     geohashes_map
 }
+
+pub fn invert_neighborhood_geohashes_map(
+    neigh_gh_map: &HashMap<String, Vec<String>>,
+) -> HashMap<String, String> {
+    let mut inverted_geohashes_map: HashMap<String, String> = HashMap::new();
+    for (neighborhood, geohashes) in neigh_gh_map {
+        for geohash in geohashes {
+            inverted_geohashes_map.insert(geohash.clone(), neighborhood.clone());
+        }
+    }
+    inverted_geohashes_map
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    /// test invert_geohashes_map
+    fn test_invert_geohashes_map() {
+        let mut geohashes_map: HashMap<String, Vec<String>> = HashMap::new();
+        geohashes_map.insert(
+            "neighborhood1".to_string(),
+            vec!["gh1".to_string(), "gh2".to_string()],
+        );
+        geohashes_map.insert(
+            "neighborhood2".to_string(),
+            vec!["gh3".to_string(), "gh4".to_string()],
+        );
+        let inverted_geohashes_map = invert_neighborhood_geohashes_map(&geohashes_map);
+        assert_eq!(inverted_geohashes_map.get("gh1").unwrap(), "neighborhood1");
+        assert_eq!(inverted_geohashes_map.get("gh2").unwrap(), "neighborhood1");
+        assert_eq!(inverted_geohashes_map.get("gh3").unwrap(), "neighborhood2");
+        assert_eq!(inverted_geohashes_map.get("gh4").unwrap(), "neighborhood2");
+    }
+}
