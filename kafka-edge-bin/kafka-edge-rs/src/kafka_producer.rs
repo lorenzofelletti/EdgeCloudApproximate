@@ -1,4 +1,4 @@
-use std::{error::Error, time::Duration, vec};
+use std::{cell::Cell, collections::HashMap, error::Error, time::Duration, vec};
 
 use geojson::Feature;
 use kafka::{
@@ -10,8 +10,9 @@ use log::warn;
 use crate::{
     args::CliArgs,
     config::structs::Config,
-    geospatial::{get_geohashes_map_from_features, read_neighborhoods},
-    kafka_producer::message::MessageTrait,
+    geospatial::{
+        get_geohashes_map_from_features, invert_neighborhood_geohashes_map, read_neighborhoods,
+    },
     skip_fail,
     utils::get_topics_names_for_neigborhood_wise_strategy,
 };
@@ -50,76 +51,110 @@ fn make_consumer(config: Config) -> Result<Consumer, kafka::Error> {
         .create()
 }
 
+fn get_topics_names(
+    config: &Config,
+    features: &Vec<Feature>,
+    strategy: SendStrategy,
+) -> Vec<String> {
+    match strategy {
+        SendStrategy::NeighborhoodWise => {
+            get_topics_names_for_neigborhood_wise_strategy(config, &features)
+        }
+        _ => {
+            // target_topic feature.len() times
+            vec![config.data_out.target_topic.clone(); features.len()]
+        }
+    }
+}
+
+fn send_strategy_to_use(args: &CliArgs, config: &Config) -> Option<SendStrategy> {
+    match &args.override_send_strategy {
+        Some(strategy) => SendStrategy::parse_send_strategy(strategy),
+        None => Some(config.data_out.send_strategy),
+    }
+}
+
+fn load_producer_metadata(producer: &mut Producer, topics: &[String]) -> Result<(), kafka::Error> {
+    producer.client_mut().load_metadata(topics)
+}
+
+fn load_consumer_metadata(config: &Config, consumer: &mut Consumer) -> Result<(), kafka::Error> {
+    consumer
+        .client_mut()
+        .load_metadata(&[config.data_in.source_topic.clone()])
+}
+
 pub fn run_producer(config: Config, args: &CliArgs) -> Result<(), Box<dyn Error>> {
     let sampling_strategy = config.data_out.sampling_strategy;
     let sampling_percentage = args.sampling_percentage;
 
-    let send_strategy = match &args.override_send_strategy {
-        Some(strategy) => SendStrategy::parse_send_strategy(strategy),
-        None => Some(config.data_out.send_strategy),
-    }
-    .ok_or("Unrecognized strategy")?;
+    let send_strategy = send_strategy_to_use(args, &config).ok_or("Unrecognized strategy")?;
 
     let features: Vec<Feature> = read_neighborhoods(&config.data_out.neighborhoods_file)?;
 
-    let output_topics = match send_strategy {
-        SendStrategy::NeighborhoodWise => {
-            get_topics_names_for_neigborhood_wise_strategy(&config, &features)
-        }
-        _ => {
-            vec![config.data_out.target_topic.clone()]
-        }
-    };
+    let topics = get_topics_names(&config, &features, send_strategy);
 
-    let neighborhoods_geohashes = get_geohashes_map_from_features(&features);
+    let neighborhood_geohashes_map = get_geohashes_map_from_features(&features);
+    let geohash_neighborhood_map = invert_neighborhood_geohashes_map(&neighborhood_geohashes_map);
+    // map each neighborhood to a topic name (topic names and neighborhood names iterate in parallel)
+    let neighborhood_topics: HashMap<String, String> = neighborhood_geohashes_map
+        .keys()
+        .zip(topics.iter())
+        .map(|(n, t)| (n.clone(), t.clone()))
+        .collect();
 
     let mut consumer = make_consumer(config.clone())?;
     let mut producer = make_producer(config.clone())?;
 
     // loads the metadata needed for the client and producer
-    consumer
-        .client_mut()
-        .load_metadata(&[config.data_in.source_topic])?;
-
-    producer
-        .client_mut()
-        .load_metadata(&output_topics.clone())?;
+    load_consumer_metadata(&config, &mut consumer)?;
+    load_producer_metadata(&mut producer, &topics)?;
 
     // partitions will be ignored in neighborhoodwise strategy
-    let topics = producer.client().topics();
-    let partitions = topics.partitions(&output_topics[0]);
+    let fetched_topics = producer.client().topics();
+    let partitions = fetched_topics.partitions(&topics[0]);
     let partitions = match partitions {
         Some(p) => p.len() as i32,
         None => 0,
     };
 
-    let mut messages: Vec<Message> = vec![];
+    let messages: Vec<Message> = Vec::<_>::with_capacity(1000);
+    let mut messages = Cell::new(messages);
 
     println!("Starting to process messages...");
 
     let mut start_time = std::time::Instant::now();
     loop {
         for message_set in consumer.poll().unwrap().iter() {
-            println!("Received {} messages", message_set.messages().len());
-
             for message in message_set.messages().iter() {
-                let message = skip_fail!(Message::json_deserialize(message.value));
-                messages.push(message);
+                let mut message = skip_fail!(Message::json_deserialize(message.value));
+                // set message's geohash and neighborhood
+                let gh = skip_fail!(message.geohash());
+                message.geohash = Some(gh.clone());
+                message.neighborhood = geohash_neighborhood_map.get(&gh).cloned();
+                messages.get_mut().push(message);
             }
         }
         if start_time.elapsed().as_millis() >= config.data_out.send_every_ms.as_millis() {
-            sampling_strategy.sample(sampling_percentage, &mut messages);
-
-            println!("Sampling done, sending {} messages", messages.len());
-
+            println!("Processing {} messages", messages.get_mut().len());
+            let elab_time = std::time::Instant::now();
+            sampling_strategy.sample(sampling_percentage, messages.get_mut());
+            println!(
+                "Sampling done! (took {}ms)",
+                elab_time.elapsed().as_millis()
+            );
             send_strategy.send(
                 &mut producer,
-                &messages,
-                &output_topics,
+                messages.get_mut(),
+                &topics,
                 partitions,
-                &neighborhoods_geohashes,
+                &neighborhood_topics,
             )?;
-            messages.clear();
+            messages.get_mut().clear();
+            println!(
+                "Messages sent! (took {}ms)",
+                elab_time.elapsed().as_millis()
+            );
             start_time = std::time::Instant::now();
         }
     }

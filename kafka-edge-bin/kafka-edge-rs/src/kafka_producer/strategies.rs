@@ -2,14 +2,11 @@ use std::collections::HashMap;
 
 use kafka::producer::{Producer, Record};
 use log::warn;
-use rand::Rng;
+use rand::{seq::index::sample, Rng};
 
-use crate::{
-    create_record, create_record_with_partition, geospatial::invert_neighborhood_geohashes_map,
-    skip_fail, skip_none,
-};
+use crate::{create_record, create_record_with_partition, skip_none};
 
-use super::message::{Message, MessageOut, MessageTrait};
+use super::message::Message;
 
 #[derive(Debug, Clone, Copy)]
 /// Enum of the possible strategies to send messages to Kafka partitions.
@@ -79,51 +76,20 @@ impl SendStrategy {
         messages: &Vec<Message>,
         topics: &[String],
         partitions: i32,
-        neighborhood_geohashes: &HashMap<String, Vec<String>>,
+        neighborhood_topics: &HashMap<String, String>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        // invert the neighborhood_geohashes map to be able to find the neighborhood of a given geohash in O(1)
-        let geohash_neighborhood = invert_neighborhood_geohashes_map(&neighborhood_geohashes);
+        let mut records: Vec<Record<String, String>> = Vec::with_capacity(messages.len());
         match self {
             SendStrategy::NeighborhoodWise => {
-                let mut neighborhood_messages: HashMap<String, Vec<MessageOut>> = HashMap::new();
-
-                // map each neighborhood to a topic name (topic names and neighborhood names iterate in parallel)
-                let neighborhood_topics: HashMap<String, String> = neighborhood_geohashes
-                    .keys()
-                    .zip(topics.iter())
-                    .map(|(n, t)| (n.clone(), t.clone()))
-                    .collect();
-
-                // initialize the neighborhood_messages hashmap
-                for topic in topics {
-                    neighborhood_messages.insert(topic.clone(), Vec::new());
+                for message in messages.iter() {
+                    let neighborhood = skip_none!(message.neighborhood.as_ref());
+                    let topic = skip_none!(neighborhood_topics.get(neighborhood));
+                    records.push(create_record!(topic, message));
                 }
+                producer.send_all(&records)?;
+                producer.send_all(&records)?;
 
-                // group messages by neighborhood
-                for msg in messages {
-                    let msg_gh = skip_fail!(msg.geohash());
-
-                    let neighborhood = skip_none!(geohash_neighborhood.get(&msg_gh)).to_owned();
-                    let topic = skip_none!(neighborhood_topics.get(&neighborhood));
-
-                    let msg = MessageOut::from_message(&msg, neighborhood);
-
-                    neighborhood_messages
-                        .entry(topic.clone())
-                        .and_modify(|v| v.push(msg))
-                        .or_insert(Vec::new());
-                }
-
-                // send messages to their respective neighborhood
-                for (_idx, (topic, messages)) in neighborhood_messages.iter().enumerate() {
-                    println!("Sending {} messages to topic: {:?}", messages.len(), topic);
-                    let records = messages
-                        .iter()
-                        .map(|msg| create_record!(topic, msg))
-                        .collect::<Vec<_>>();
-                    producer.send_all(&records)?;
-                }
-                Ok(())
+                producer.send_all(&records)?;
             }
             strat => {
                 let topic = topics.first().expect("No topic given!");
@@ -141,19 +107,15 @@ impl SendStrategy {
                             .unwrap();
                     }
 
-                    let msg_gh = skip_fail!(msg.geohash());
-                    let neighborhood = skip_none!(geohash_neighborhood.get(&msg_gh)).to_owned();
-                    let msg = MessageOut::from_message(&msg, neighborhood);
-
                     // create a record
                     let record = create_record_with_partition!(topic, msg, partition);
 
                     // send the record
                     producer.send(&record)?;
                 }
-                Ok(())
             }
         }
+        Ok(())
     }
 }
 
@@ -192,32 +154,35 @@ impl SamplingStrategy {
                  * The messages are grouped by geohash, and then a random
                  * sample is taken from each group. */
 
-                // create a map of geohash to indexes of messages with that geohash
-                let mut geohash_msgs_idx_map: HashMap<String, Vec<usize>> = HashMap::new();
-                for (i, msg) in messages.iter().enumerate() {
-                    let geohash = msg.geohash().unwrap_or_default().clone();
-                    let idx = geohash_msgs_idx_map.entry(geohash).or_insert(vec![]);
-                    idx.push(i);
+                let mut is_index_to_keep = vec![true; messages.len()];
+
+                messages.sort_by(|a, b| a.geohash_cmp(b));
+
+                let mut starting_idx = 0;
+                let mut curr_gh = messages[0].geohash.as_ref().unwrap();
+
+                for (i, msg) in messages.iter().enumerate().skip(1) {
+                    if msg.geohash.as_ref().unwrap() == curr_gh {
+                        continue;
+                    }
+                    // elements from starting_idx to i-1 have the same geohash
+                    // we need to sample from this group
+                    let group_size = i - starting_idx;
+                    // the distinction is needed because if the group size is 1, then empirically
+                    // we observed an abnormally high probability of discarding the element
+                    if group_size > 1 {
+                        let amount = (group_size as f64 * sampling_percentage) as usize;
+                        sample(&mut rng, group_size, amount)
+                            .iter()
+                            .for_each(|j| is_index_to_keep[starting_idx + j] = false);
+                    } else {
+                        is_index_to_keep[starting_idx] = rng.gen_bool(sampling_percentage);
+                    }
+
+                    // update the starting index and the current geohash
+                    starting_idx = i;
+                    curr_gh = msg.geohash.as_ref().unwrap();
                 }
-
-                // sample each group
-                geohash_msgs_idx_map.iter_mut().for_each(|(_, idxs)| {
-                    idxs.retain(|_| rng.gen_bool(sampling_percentage));
-                });
-                // flatten the map to a vector of indexes of messages to keep
-                let mut to_keep: Vec<usize> = geohash_msgs_idx_map
-                    .values()
-                    .flatten()
-                    .map(|i| *i)
-                    .collect();
-                to_keep.sort();
-
-                // retain only the messages with the indexes in `to_keep`
-                let mut i = 0;
-                messages.retain(|_| {
-                    i += 1;
-                    to_keep.contains(&(i - 1))
-                });
             }
         }
     }
