@@ -1,4 +1,4 @@
-FROM docker.io/bitnami/kafka:3.3
+FROM docker.io/bitnami/kafka:3.4
 
 USER root
 
