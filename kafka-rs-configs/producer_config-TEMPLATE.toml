@@ -7,5 +7,5 @@ partitions = 2
 [data]
 source = "/data/china/mobility/guang.csv"
 msg_sleep_in_ms = 1
-chunk_size = 300000
-chunk_sleep_in_ms = 300
+chunk_size = 1000
+chunk_sleep_in_ms = 500
