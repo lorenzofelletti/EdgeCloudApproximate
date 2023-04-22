@@ -64,6 +64,7 @@ pub fn run_kafka_producer(config: Config, _cli: &CliArgs) -> Result<(), Box<dyn 
             println!("Sent {} records", chunk_records.len());
 
             // reset for next chunk
+            chunk_records.clear();
             chunk.clear();
             partition = (partition + 1) % partitions_number;
             start_time = Instant::now();
