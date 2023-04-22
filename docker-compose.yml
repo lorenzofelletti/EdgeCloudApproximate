@@ -45,11 +45,8 @@ services:
       context: .
       dockerfile: Dockerfile_kafka
     user: root
-    ports:
-      - "9092:9092"
     environment:
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
-      - KAFKA_CFG_BROKER_ID=0
       - ALLOW_PLAINTEXT_LISTENER=yes
     depends_on:
       - zookeeper
@@ -58,11 +55,8 @@ services:
       context: .
       dockerfile: Dockerfile_edge
     user: root
-    ports:
-      - "9093:9093"
     environment:
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
-      - KAFKA_CFG_BROKER_ID=1
       - ALLOW_PLAINTEXT_LISTENER=yes
     depends_on:
       - zookeeper
