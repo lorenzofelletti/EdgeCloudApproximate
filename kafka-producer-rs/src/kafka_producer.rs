@@ -57,7 +57,10 @@ pub fn run_kafka_producer(config: Config, _cli: &CliArgs) -> Result<(), Box<dyn 
             }
 
             // send the chunk
-            producer.send_all(&chunk_records)?;
+            for rec_chunk in chunk_records.chunks(100) {
+                producer.send_all(&rec_chunk)?;
+            }
+
             println!("Sent {} records", chunk_records.len());
 
             // reset for next chunk
