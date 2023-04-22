@@ -150,11 +150,12 @@ pub fn run_producer(config: Config, args: &CliArgs) -> Result<(), Box<dyn Error>
                 partitions,
                 &neighborhood_topics,
             )?;
-            messages.get_mut().clear();
             println!(
-                "Messages sent! (took {}ms)",
+                "{} messages sent! (took {}ms)",
+                messages.get_mut().len(),
                 elab_time.elapsed().as_millis()
             );
+            messages.get_mut().clear();
             start_time = std::time::Instant::now();
         }
     }
