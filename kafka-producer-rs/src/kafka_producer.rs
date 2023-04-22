@@ -31,25 +31,19 @@ pub fn run_kafka_producer(config: Config, _cli: &CliArgs) -> Result<(), Box<dyn 
 
     let chunk_size: usize = config.data.chunk_size.get() as usize;
     let mut chunk = Vec::with_capacity(chunk_size);
-    let mut chunk_records = Vec::with_capacity(chunk_size);
 
     let mut start_time = Instant::now();
     let mut partition = 0;
     for result in reader.records() {
         let record = result?;
-
+        let data: Message = record.deserialize(None)?;
+        let data_json = data.json_serialize();
+        let record =
+            Record::from_key_value(&config.kafka.topic[..], data.id, data_json.to_string())
+                .with_partition(partition);
         chunk.push(record);
 
         if chunk.len() == chunk_size {
-            for record in &chunk[..] {
-                let data: Message = record.deserialize(None)?;
-                let data_json = data.json_serialize();
-                chunk_records.push(
-                    Record::from_key_value(&config.kafka.topic[..], data.id, data_json.to_string())
-                        .with_partition(partition),
-                );
-            }
-
             // wait for all the chunk_sleep_in_ms to pass
             let elapsed = start_time.elapsed();
             if start_time.elapsed() < config.data.chunk_sleep_in_ms {
@@ -57,14 +51,13 @@ pub fn run_kafka_producer(config: Config, _cli: &CliArgs) -> Result<(), Box<dyn 
             }
 
             // send the chunk
-            for rec_chunk in chunk_records.chunks(100) {
+            for rec_chunk in chunk.chunks(100) {
                 producer.send_all(&rec_chunk)?;
             }
 
-            println!("Sent {} records", chunk_records.len());
+            println!("Sent {} records", chunk.len());
 
             // reset for next chunk
-            chunk_records.clear();
             chunk.clear();
             partition = (partition + 1) % partitions_number;
             start_time = Instant::now();
