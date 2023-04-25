@@ -170,20 +170,147 @@ impl SamplingStrategy {
                     let group_size = i - starting_idx;
                     // the distinction is needed because if the group size is 1, then empirically
                     // we observed an abnormally high probability of discarding the element
-                    if group_size > 1 {
-                        let amount = (group_size as f64 * sampling_percentage) as usize;
-                        sample(&mut rng, group_size, amount)
-                            .iter()
-                            .for_each(|j| is_index_to_keep[starting_idx + j] = false);
-                    } else {
-                        is_index_to_keep[starting_idx] = rng.gen_bool(sampling_percentage);
-                    }
+                    update_is_index_to_keep(
+                        group_size,
+                        sampling_percentage,
+                        &mut rng,
+                        &mut is_index_to_keep,
+                        starting_idx,
+                    );
 
                     // update the starting index and the current geohash
                     starting_idx = i;
                     curr_gh = msg.geohash.as_ref().unwrap();
                 }
+
+                // the last group is not sampled yet
+                let group_size = messages.len() - starting_idx;
+                update_is_index_to_keep(
+                    group_size,
+                    sampling_percentage,
+                    &mut rng,
+                    &mut is_index_to_keep,
+                    starting_idx,
+                );
+
+                // remove the elements that are not to be kept
+                let mut i: i64 = -1;
+                messages.retain(|_| {
+                    i += 1;
+                    is_index_to_keep[i as usize]
+                });
             }
         }
+    }
+}
+
+#[inline(always)]
+/// Sets the elements of `is_index_to_keep` to false with probability `sampling_percentage`.
+fn update_is_index_to_keep(
+    group_size: usize,
+    sampling_percentage: f64,
+    rng: &mut rand::rngs::ThreadRng,
+    is_index_to_keep: &mut [bool],
+    starting_idx: usize,
+) {
+    if group_size > 1 {
+        let mut amount = (group_size as f64 * sampling_percentage) as usize;
+        if amount > 0 && rng.gen_bool(0.5) {
+            amount -= 1;
+        }
+        sample(rng, group_size, amount)
+            .iter()
+            .for_each(|j| is_index_to_keep[starting_idx + j] = false);
+    } else {
+        is_index_to_keep[starting_idx] = !rng.gen_bool(sampling_percentage);
+    }
+}
+
+/// tests the sampling strategy
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn get_random_vec_msgs_of_len(len: usize) -> Vec<Message> {
+        let mut msgs = Vec::with_capacity(len);
+        let mut rng = rand::thread_rng();
+        for _ in 0..len {
+            let mut msg = Message {
+                id: "".to_string(),
+                lat: 114.0 + rng.gen_range(-0.05..0.05),
+                lon: 22.5 + rng.gen_range(-0.05..0.05),
+                time: "".to_string(),
+                speed: 46.0,
+                geohash: None,
+                neighborhood: None,
+            };
+            msg.geohash = Some(msg.geohash().unwrap());
+            msgs.push(msg);
+        }
+        msgs
+    }
+
+    fn sample_msgs(
+        msgs_len: usize,
+        strat: SamplingStrategy,
+        sampling_percentage: f64,
+    ) -> Vec<Message> {
+        let mut msgs = get_random_vec_msgs_of_len(msgs_len);
+
+        dbg!(msgs.len());
+        strat.sample(sampling_percentage, &mut msgs);
+        dbg!(msgs.len());
+        msgs
+    }
+
+    #[test]
+    fn test_stratified_sampling_sample_0_50() -> Result<(), Box<dyn std::error::Error>> {
+        let strat = SamplingStrategy::Stratified;
+
+        let msgs_len = 10000;
+        let sampling_percentage = 0.50;
+        let to_retain = (msgs_len / 2) as f64;
+
+        let msgs = sample_msgs(msgs_len, strat, sampling_percentage);
+
+        assert!(msgs.len() < msgs_len);
+        assert!((msgs.len() as f64) > to_retain - msgs_len as f64 * 0.05);
+        assert!((msgs.len() as f64) < to_retain + msgs_len as f64 * 0.05);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_stratified_sampling_sample_0_90() -> Result<(), Box<dyn std::error::Error>> {
+        let strat = SamplingStrategy::Stratified;
+
+        let msgs_len = 10000;
+        let sampling_percentage = 0.90;
+        let to_retain = msgs_len as f64 * sampling_percentage;
+
+        let msgs = sample_msgs(msgs_len, strat, sampling_percentage);
+
+        assert!(msgs.len() < msgs_len);
+        assert!((msgs.len() as f64) > to_retain - msgs_len as f64 * 0.05);
+        assert!((msgs.len() as f64) < to_retain + msgs_len as f64 * 0.05);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_stratified_sampling_sample_0_10() -> Result<(), Box<dyn std::error::Error>> {
+        let strat = SamplingStrategy::Stratified;
+
+        let msgs_len = 10000;
+        let sampling_percentage = 0.10;
+        let to_retain = msgs_len as f64 * sampling_percentage;
+
+        let msgs = sample_msgs(msgs_len, strat, sampling_percentage);
+
+        assert!(msgs.len() < msgs_len);
+        assert!((msgs.len() as f64) > to_retain - msgs_len as f64 * 0.05);
+        assert!((msgs.len() as f64) < to_retain + msgs_len as f64 * 0.05);
+
+        Ok(())
     }
 }
