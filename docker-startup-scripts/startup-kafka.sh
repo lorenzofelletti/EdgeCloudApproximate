@@ -3,4 +3,4 @@
 ./kafka-edge-rs topic create out --for-nbw-strat
 
 ./kafka-producer-rs/kafka-producer-rs &
-./kafka-edge-rs -s 0.2
+./kafka-edge-rs -s 0.8

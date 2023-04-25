@@ -12,8 +12,7 @@ for configuration.";
 #[command(propagate_version = true)]
 pub struct CliArgs {
     #[arg(short, long, default_value_t = 0.5)]
-    /// The sampling percentage; i.e. how many of the incoming messages to
-    /// discard, in percentage
+    /// The sampling percentage; i.e. how many of the incoming messages to keep, in percentage
     pub sampling_percentage: f64,
 
     #[arg(long)]

@@ -55,6 +55,12 @@ pub fn read_array_key_from_table<S: Into<String>>(
     table_data: &toml::map::Map<std::string::String, Value>,
 ) -> Result<&Vec<Value>, ConfigurationError> {
     let key_name: String = key_name.into();
+    if !table_data.contains_key(&key_name) {
+        return Err(ConfigurationError::new_key_not_found_err(
+            key_name,
+            table_name.into(),
+        ));
+    }
     table_data[&key_name.clone()]
         .as_array()
         .ok_or(ConfigurationError::new_key_not_found_err(

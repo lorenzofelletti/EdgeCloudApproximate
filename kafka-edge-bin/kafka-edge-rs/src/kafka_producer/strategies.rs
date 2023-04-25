@@ -229,6 +229,8 @@ fn update_is_index_to_keep(
 /// tests the sampling strategy
 #[cfg(test)]
 mod tests {
+    use geo::Coord;
+
     use super::*;
 
     fn get_random_vec_msgs_of_len(len: usize) -> Vec<Message> {
@@ -324,6 +326,38 @@ mod tests {
         let msgs = sample_msgs(msgs_len, strat, sampling_percentage);
 
         assert!(msgs.len() == msgs_len);
+        Ok(())
+    }
+
+    #[test]
+    fn test_stratified_sampling_equal_array() -> Result<(), Box<dyn std::error::Error>> {
+        let strat = SamplingStrategy::Stratified;
+
+        let msgs_len = 10000;
+        let sampling_percentage = 0.40;
+        let to_retain = msgs_len as f64 * sampling_percentage;
+
+        let mut msgs = vec![
+            Message {
+                id: "".to_string(),
+                lat: 114.0,
+                lon: 22.5,
+                time: "".to_string(),
+                speed: 46.0,
+                geohash: Some(geohash::encode(Coord { x: 114.0, y: 22.5 }, 6).unwrap()),
+                neighborhood: None,
+            };
+            msgs_len
+        ];
+
+        dbg!(msgs.len());
+        strat.sample(sampling_percentage, &mut msgs);
+        dbg!(msgs.len());
+
+        assert!(msgs.len() < msgs_len);
+        assert!((msgs.len() as f64) > to_retain - msgs_len as f64 * 0.05);
+        assert!((msgs.len() as f64) < to_retain + msgs_len as f64 * 0.05);
+
         Ok(())
     }
 }
