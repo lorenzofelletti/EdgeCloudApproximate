@@ -17,16 +17,18 @@ def get_rectangles_bounds(gh):
 
 def process_data(data: pd.DataFrame, time: str):
     # map from red to green based on the avg_speed field
-    cmap = linear.RdYlGn_09.scale(0, 70)
+    cmap = linear.RdYlGn_09.scale(0, 60)
     # add color field to the data
     data['color'] = data['avg_speed'].apply(lambda x: cmap(x))
     data['lat'] = data['geohash'].apply(lambda x: geohash.decode(x)[0])
     data['lon'] = data['geohash'].apply(lambda x: geohash.decode(x)[1])
-    
-    data = data[data['time'] == time]        
+
+    data = data[data['time'] == time]
+    data.reset_index(inplace=True) # reset index to avoid problems (like index 0 not existing)
 
     # Create a map centered on the first geohash in the dataset
-    map = folium.Map(location=[data['lat'][0], data['lon'][0]], zoom_start=10)
+    #map = folium.Map(location=[data['lat'][0], data['lon'][0]], zoom_start=10)
+    map = folium.Map(location=[22.59, 114.11], zoom_start=10)
 
     for _, row in data.iterrows():
         bounds = get_rectangles_bounds(row['geohash'])
