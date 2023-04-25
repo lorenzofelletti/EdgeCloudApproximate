@@ -51,7 +51,7 @@ impl Message {
     }
 
     /// Compare the geohash of the message with the geohash of another message.
-    /// 
+    ///
     /// # Panics
     /// Panics if one of the messages does not have a geohash.
     pub fn geohash_cmp(&self, other: &Message) -> std::cmp::Ordering {

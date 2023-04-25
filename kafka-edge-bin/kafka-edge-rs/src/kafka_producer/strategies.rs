@@ -313,4 +313,17 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn test_stratified_sampling_sample_1_0() -> Result<(), Box<dyn std::error::Error>> {
+        let strat = SamplingStrategy::Stratified;
+
+        let msgs_len = 10000;
+        let sampling_percentage = 1.0;
+
+        let msgs = sample_msgs(msgs_len, strat, sampling_percentage);
+
+        assert!(msgs.len() == msgs_len);
+        Ok(())
+    }
 }
