@@ -183,12 +183,11 @@ impl SamplingStrategy {
 
                 let sampled_groups: Vec<Vec<&Message>> = groups
                     .par_iter()
-                    .map(|(_, group)| {
-                        let sample_size = sample_sizes[group[0].geohash.as_ref().unwrap().as_str()];
+                    .map(|(geohash, group)| {
                         group
                             .iter()
                             .cloned()
-                            .choose_multiple(&mut rand::thread_rng(), sample_size)
+                            .choose_multiple(&mut rand::thread_rng(), sample_sizes[geohash])
                     })
                     .collect();
                 *messages = sampled_groups.into_iter().flatten().cloned().collect();
