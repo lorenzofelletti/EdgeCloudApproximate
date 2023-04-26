@@ -5,7 +5,7 @@ use log::warn;
 use rand::{seq::IteratorRandom, Rng};
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
-use crate::{create_record, create_record_with_partition, skip_none};
+use crate::{create_record, create_record_with_partition, either, skip_none};
 
 use super::message::Message;
 
@@ -170,8 +170,15 @@ impl SamplingStrategy {
 
                 let mut sample_sizes: HashMap<&str, usize> = HashMap::new();
                 for (geohash, group) in &groups {
-                    let proportion = group.len() as f64 / total_size as f64;
-                    sample_sizes.insert(geohash, (proportion * sample_size) as usize);
+                    if group.len() == 1 {
+                        sample_sizes.insert(
+                            geohash,
+                            either!(rng.gen_bool(sampling_percentage) => 1; 0) as usize,
+                        );
+                    } else {
+                        let proportion = group.len() as f64 / total_size as f64;
+                        sample_sizes.insert(geohash, (proportion * sample_size) as usize);
+                    }
                 }
 
                 let sampled_groups: Vec<Vec<&Message>> = groups
@@ -323,6 +330,39 @@ mod tests {
         assert!((msgs.len() as f64) < to_retain + msgs_len as f64 * 0.05);
 
         Ok(())
+    }
+
+    #[test]
+    fn test_stratified_sampling_many_groups_of_one() {
+        let strat = SamplingStrategy::Stratified;
+
+        let msgs_len = 10000;
+        let sampling_percentage = 0.40;
+        let to_retain = msgs_len as f64 * sampling_percentage;
+
+        let mut rng = rand::thread_rng();
+        let mut msgs = Vec::with_capacity(msgs_len);
+        for _ in 0..msgs_len {
+            let mut msg = Message {
+                id: "".to_string(),
+                lat: 114.0 + rng.gen_range(-10.0..=10.0),
+                lon: 22.5 + rng.gen_range(-5.0..=5.0),
+                time: "".to_string(),
+                speed: 46.0,
+                geohash: None,
+                neighborhood: None,
+            };
+            msg.geohash = Some(msg.geohash().unwrap());
+            msgs.push(msg);
+        }
+
+        dbg!(msgs.len());
+        strat.sample(sampling_percentage, &mut msgs);
+        dbg!(msgs.len());
+
+        assert!(msgs.len() < msgs_len);
+        assert!((msgs.len() as f64) > to_retain - msgs_len as f64 * 0.05);
+        assert!((msgs.len() as f64) < to_retain + msgs_len as f64 * 0.05);
     }
 
     #[test]

@@ -35,3 +35,15 @@ pub fn get_topic_name_from_neighborhood_name(config: &Config, neighborhood: &str
     let neighborhood = neighborhood.replace([' ', '"'], "");
     format!("{}_{}", config.data_out.target_topic, neighborhood)
 }
+
+#[macro_export]
+macro_rules! either {
+    ($test:expr => $true_expr:expr; $false_expr:expr) => {
+        if $test {
+            $true_expr
+        }
+        else {
+            $false_expr
+        }
+    }
+}
