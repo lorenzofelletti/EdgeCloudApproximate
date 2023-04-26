@@ -5,7 +5,7 @@ use log::warn;
 use rand::{seq::IteratorRandom, Rng};
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
-use crate::{create_record, create_record_with_partition, either, skip_none};
+use crate::{create_record, create_record_with_partition, either};
 
 use super::message::Message;
 
@@ -79,14 +79,20 @@ impl SendStrategy {
         partitions: i32,
         neighborhood_topics: &HashMap<String, String>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let mut records: Vec<Record<String, String>> = Vec::with_capacity(messages.len());
         match self {
             SendStrategy::NeighborhoodWise => {
-                for message in messages.iter() {
-                    let neighborhood = skip_none!(message.neighborhood.as_ref());
-                    let topic = skip_none!(neighborhood_topics.get(neighborhood));
-                    records.push(create_record!(topic, message));
-                }
+                let records = messages
+                    .par_iter()
+                    .filter_map(|message| {
+                        if let Some(neighborhood) = message.neighborhood.as_ref() {
+                            let topic = neighborhood_topics.get(neighborhood).unwrap();
+                            Some(create_record!(topic, message))
+                        } else {
+                            warn!("Message without neighborhood: {:?}", message);
+                            None
+                        }
+                    })
+                    .collect::<Vec<_>>();
                 producer.send_all(&records)?;
                 producer.send_all(&records)?;
 
