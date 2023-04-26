@@ -7,7 +7,7 @@ pub fn get_config_path() -> Result<PathBuf, Box<dyn Error>> {
     // Get current executable path
     let executable_path = env::current_exe()?;
 
-    let mut output_path = PathBuf::from(executable_path);
+    let mut output_path = executable_path;
     output_path.set_file_name(TOML_FILE_NAME);
 
     Ok(output_path)
@@ -16,13 +16,13 @@ pub fn get_config_path() -> Result<PathBuf, Box<dyn Error>> {
 /// Return the vector of the topic names to use when in `NeighborhoodWise` strategy.
 pub fn get_topics_names_for_neigborhood_wise_strategy(
     config: &Config,
-    features: &Vec<geojson::Feature>,
+    features: &[geojson::Feature],
 ) -> Vec<String> {
     let mut res = vec![];
 
     for (i, _) in features.iter().enumerate() {
         res.push(get_topic_name_from_neighborhood_name(
-            &config,
+            config,
             &i.to_string(),
         ));
     }
@@ -30,8 +30,8 @@ pub fn get_topics_names_for_neigborhood_wise_strategy(
     res
 }
 
-pub fn get_topic_name_from_neighborhood_name(config: &Config, neighborhood: &String) -> String {
+pub fn get_topic_name_from_neighborhood_name(config: &Config, neighborhood: &str) -> String {
     // remove from the neighborhood name the spaces and the quotes
-    let neighborhood = neighborhood.replace(" ", "").replace("\"", "");
+    let neighborhood = neighborhood.replace([' ', '"'], "");
     format!("{}_{}", config.data_out.target_topic, neighborhood)
 }

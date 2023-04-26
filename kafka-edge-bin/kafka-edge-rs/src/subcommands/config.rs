@@ -30,13 +30,13 @@ pub fn config_create(args: &CreateConfig) -> Result<(), Box<dyn Error>> {
 
     let toml_template = TOML_CONFIG_TEMPLATE
         .replace("{SOURCE_TOPIC}", &source_topic)
-        .replace("{CONSUMER_GROUP}", &DEFAULT_CONSUMER_GROUP.to_string())
+        .replace("{CONSUMER_GROUP}", DEFAULT_CONSUMER_GROUP)
         .replace("{TARGET_TOPIC}", &target_topic)
         .replace("{SEND_EVERY_MS}", &DEFAULT_SEND_EVERY_MS.to_string())
-        .replace("{SEND_STRATEGY}", &DEFAULT_SEND_STRATEGY)
-        .replace("{SAMPLING_STRATEGY}", &DEFAULT_SAMPLING_STRATEGY);
+        .replace("{SEND_STRATEGY}", DEFAULT_SEND_STRATEGY)
+        .replace("{SAMPLING_STRATEGY}", DEFAULT_SAMPLING_STRATEGY);
 
-    fs::write(&output_path, toml_template)?;
+    fs::write(output_path, toml_template)?;
 
     Ok(())
 }
@@ -47,7 +47,7 @@ pub fn config_replace(args: &ReplaceConfig) -> Result<(), Box<dyn Error>> {
 
     let new_config_contents = fs::read_to_string(args.file.clone())?;
 
-    fs::write(&output_path, new_config_contents)?;
+    fs::write(output_path, new_config_contents)?;
 
     Ok(())
 }

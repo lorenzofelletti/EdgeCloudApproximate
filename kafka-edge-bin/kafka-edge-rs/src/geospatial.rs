@@ -29,7 +29,7 @@ pub fn children(gh: &String) -> Vec<String> {
 }
 
 pub fn bbox(gh: &str) -> Option<Polygon<f64>> {
-    if gh == "" {
+    if gh.is_empty() {
         let min = Coord::<f64>::from((-180.0, -90.0));
         let max = Coord::<f64>::from((180.0, 90.0));
         return Some(geo_types::Rect::new(min, max).to_polygon());
@@ -72,17 +72,14 @@ pub fn covering(geom: &Geometry<f64>, level: usize) -> Vec<String> {
     let mut queue: Vec<String> = vec!["".to_string()];
     while !queue.is_empty() {
         let gh = queue.pop().unwrap();
-        match bbox(&gh) {
-            Some(poly) => {
-                if contains(&poly, &geom) || poly.intersects(geom) {
-                    if gh.len() < level {
-                        queue.extend(children(&gh));
-                    } else {
-                        ghs.push(gh);
-                    }
+        if let Some(poly) = bbox(&gh) {
+            if contains(&poly, geom) || poly.intersects(geom) {
+                if gh.len() < level {
+                    queue.extend(children(&gh));
+                } else {
+                    ghs.push(gh);
                 }
             }
-            None => (),
         }
     }
     ghs

@@ -5,7 +5,7 @@ use toml::{map::Map, Value};
 use super::errors::{ConfigurationError, ErrorType};
 
 pub fn vec_empty_or_has_empty_strings(to_check: &Vec<String>) -> bool {
-    to_check.len() == 0 || to_check.contains(&String::from(""))
+    to_check.is_empty() || to_check.contains(&String::from(""))
 }
 
 /// Checks that the value for `key` is not an empty vec and that it does not contains empty strings
@@ -119,16 +119,16 @@ pub fn from_u64_to_nonzerou64(value: u64) -> Result<NonZeroU64, ConfigurationErr
         .map_err(|e: <NonZeroU64 as TryFrom<u64>>::Error| ConfigurationError::Error(e.to_string()))
 }
 
-pub fn from_vec_of_value_to_vec_of_string(vec_of_value: &Vec<Value>) -> Vec<String> {
+pub fn from_vec_of_value_to_vec_of_string(vec_of_value: &[Value]) -> Vec<String> {
     vec_of_value
-        .into_iter()
+        .iter()
         .map(|x| x.as_str().unwrap_or_default().to_owned())
         .collect()
 }
 
-pub fn from_vec_of_string_to_vec_of_i32(vec_of_string: &Vec<String>) -> Vec<i32> {
+pub fn from_vec_of_string_to_vec_of_i32(vec_of_string: &[String]) -> Vec<i32> {
     vec_of_string
-        .into_iter()
+        .iter()
         .map(|x| x.parse::<i32>().unwrap_or_default())
         .collect()
 }

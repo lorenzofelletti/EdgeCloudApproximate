@@ -45,7 +45,7 @@ fn _topic_create(config: Config, args: &TopicCreateArgs) -> Result<(), Box<dyn E
         .arg("--bootstrap-server")
         .arg(brokers)
         .arg("--partitions")
-        .arg(partitions.to_string())
+        .arg(partitions)
         .arg("--replication-factor")
         .arg(replication_factor.to_string())
         .output()?;
@@ -59,7 +59,7 @@ fn _topic_create(config: Config, args: &TopicCreateArgs) -> Result<(), Box<dyn E
 }
 
 pub fn topic_create(config: &Config, args: &TopicCreateArgs) -> Result<(), Box<dyn Error>> {
-    if args.for_neighborhoodwise_strategy == false {
+    if !args.for_neighborhoodwise_strategy {
         _topic_create(config.clone(), args)?;
     }
 
@@ -90,7 +90,7 @@ pub fn topic_create(config: &Config, args: &TopicCreateArgs) -> Result<(), Box<d
             .arg("--bootstrap-server")
             .arg(brokers)
             .arg("--partitions")
-            .arg(partitions.to_string())
+            .arg(partitions)
             .arg("--replication-factor")
             .arg(replication_factor.to_string())
             .output()?;
@@ -105,9 +105,5 @@ pub fn topic_create(config: &Config, args: &TopicCreateArgs) -> Result<(), Box<d
 }
 
 fn topic_exists(client: KafkaClient, topic: &String) -> bool {
-    client
-        .topics()
-        .names()
-        .into_iter()
-        .any(|t| t.to_owned() == *topic)
+    client.topics().names().any(|t| t == topic)
 }

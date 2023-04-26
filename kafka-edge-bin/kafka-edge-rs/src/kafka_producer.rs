@@ -58,7 +58,7 @@ fn get_topics_names(
 ) -> Vec<String> {
     match strategy {
         SendStrategy::NeighborhoodWise => {
-            get_topics_names_for_neigborhood_wise_strategy(config, &features)
+            get_topics_names_for_neigborhood_wise_strategy(config, features)
         }
         _ => {
             // target_topic feature.len() times
