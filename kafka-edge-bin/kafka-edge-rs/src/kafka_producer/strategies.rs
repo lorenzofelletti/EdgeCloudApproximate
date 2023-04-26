@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use kafka::producer::{Producer, Record};
 use log::warn;
-use rand::{seq::index::sample, Rng};
+use rand::{seq::IteratorRandom, Rng};
+use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
 use crate::{create_record, create_record_with_partition, skip_none};
 
@@ -101,10 +102,7 @@ impl SendStrategy {
                         partition = (idx % partitions as usize) as i32;
                     } else {
                         // choose a random partition
-                        partition = rand::thread_rng()
-                            .gen_range(0..partitions)
-                            .try_into()
-                            .unwrap();
+                        partition = rand::thread_rng().gen_range(0..partitions);
                     }
 
                     // create a record
@@ -141,7 +139,14 @@ impl SamplingStrategy {
     /// # Notes
     /// The `messages` vector is modified in-place.
     pub fn sample(&self, sampling_percentage: f64, messages: &mut Vec<Message>) {
-        let sampling_percentage = 1.0 - sampling_percentage;
+        if sampling_percentage == 1.0 || messages.is_empty() {
+            return;
+        }
+        if sampling_percentage == 0.0 {
+            messages.clear();
+            return;
+        }
+
         let mut rng = rand::thread_rng();
         match self {
             SamplingStrategy::Random => {
@@ -153,76 +158,35 @@ impl SamplingStrategy {
                  * calculated by the lat and lon of the message.
                  * The messages are grouped by geohash, and then a random
                  * sample is taken from each group. */
-
-                let mut is_index_to_keep = vec![true; messages.len()];
-
-                messages.sort_by(|a, b| a.geohash_cmp(b));
-
-                let mut starting_idx = 0;
-                let mut curr_gh = messages[0].geohash.as_ref().unwrap();
-
-                for (i, msg) in messages.iter().enumerate().skip(1) {
-                    if msg.geohash.as_ref().unwrap() == curr_gh {
-                        continue;
-                    }
-                    // elements from starting_idx to i-1 have the same geohash
-                    // we need to sample from this group
-                    let group_size = i - starting_idx;
-                    // the distinction is needed because if the group size is 1, then empirically
-                    // we observed an abnormally high probability of discarding the element
-                    update_is_index_to_keep(
-                        group_size,
-                        sampling_percentage,
-                        &mut rng,
-                        &mut is_index_to_keep,
-                        starting_idx,
-                    );
-
-                    // update the starting index and the current geohash
-                    starting_idx = i;
-                    curr_gh = msg.geohash.as_ref().unwrap();
+                let total_size = messages.len();
+                let sample_size = total_size as f64 * sampling_percentage;
+                let mut groups: HashMap<&str, Vec<&Message>> = HashMap::new();
+                for message in messages as &[Message] {
+                    groups
+                        .entry(message.geohash.as_ref().unwrap())
+                        .or_insert_with(Vec::new)
+                        .push(message);
                 }
 
-                // the last group is not sampled yet
-                let group_size = messages.len() - starting_idx;
-                update_is_index_to_keep(
-                    group_size,
-                    sampling_percentage,
-                    &mut rng,
-                    &mut is_index_to_keep,
-                    starting_idx,
-                );
+                let mut sample_sizes: HashMap<&str, usize> = HashMap::new();
+                for (geohash, group) in &groups {
+                    let proportion = group.len() as f64 / total_size as f64;
+                    sample_sizes.insert(geohash, (proportion * sample_size) as usize);
+                }
 
-                // remove the elements that are not to be kept
-                let mut i: i64 = -1;
-                messages.retain(|_| {
-                    i += 1;
-                    is_index_to_keep[i as usize]
-                });
+                let sampled_groups: Vec<Vec<&Message>> = groups
+                    .par_iter()
+                    .map(|(_, group)| {
+                        let sample_size = sample_sizes[group[0].geohash.as_ref().unwrap().as_str()];
+                        group
+                            .iter()
+                            .cloned()
+                            .choose_multiple(&mut rand::thread_rng(), sample_size)
+                    })
+                    .collect();
+                *messages = sampled_groups.into_iter().flatten().cloned().collect();
             }
         }
-    }
-}
-
-#[inline(always)]
-/// Sets the elements of `is_index_to_keep` to false with probability `sampling_percentage`.
-fn update_is_index_to_keep(
-    group_size: usize,
-    sampling_percentage: f64,
-    rng: &mut rand::rngs::ThreadRng,
-    is_index_to_keep: &mut [bool],
-    starting_idx: usize,
-) {
-    if group_size > 1 {
-        let mut amount = (group_size as f64 * sampling_percentage) as usize;
-        if amount > 0 && rng.gen_bool(0.5) {
-            amount -= 1;
-        }
-        sample(rng, group_size, amount)
-            .iter()
-            .for_each(|j| is_index_to_keep[starting_idx + j] = false);
-    } else {
-        is_index_to_keep[starting_idx] = !rng.gen_bool(sampling_percentage);
     }
 }
 
@@ -353,6 +317,23 @@ mod tests {
         dbg!(msgs.len());
         strat.sample(sampling_percentage, &mut msgs);
         dbg!(msgs.len());
+
+        assert!(msgs.len() < msgs_len);
+        assert!((msgs.len() as f64) > to_retain - msgs_len as f64 * 0.05);
+        assert!((msgs.len() as f64) < to_retain + msgs_len as f64 * 0.05);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_random_sampling_sample_0_90() -> Result<(), Box<dyn std::error::Error>> {
+        let strat = SamplingStrategy::Random;
+
+        let msgs_len = 10000;
+        let sampling_percentage = 0.90;
+        let to_retain = msgs_len as f64 * sampling_percentage;
+
+        let msgs = sample_msgs(msgs_len, strat, sampling_percentage);
 
         assert!(msgs.len() < msgs_len);
         assert!((msgs.len() as f64) > to_retain - msgs_len as f64 * 0.05);
