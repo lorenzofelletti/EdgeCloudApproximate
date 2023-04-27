@@ -93,10 +93,10 @@ impl SendStrategy {
                         }
                     })
                     .collect::<Vec<_>>();
-                producer.send_all(&records)?;
-                producer.send_all(&records)?;
 
-                producer.send_all(&records)?;
+                for chunk in records.chunks(100_000) {
+                    producer.send_all(chunk)?;
+                }
             }
             strat => {
                 let topic = topics.first().expect("No topic given!");
