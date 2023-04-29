@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use kafka::producer::{Producer, Record};
-use log::warn;
+
 use rand::{seq::IteratorRandom, Rng};
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
@@ -84,13 +84,12 @@ impl SendStrategy {
                 let records = messages
                     .par_iter()
                     .filter_map(|message| {
-                        if let Some(neighborhood) = message.neighborhood.as_ref() {
-                            let topic = neighborhood_topics.get(neighborhood).unwrap();
-                            Some(create_record!(topic, message))
-                        } else {
-                            warn!("Message without neighborhood: {:?}", message);
-                            None
+                        let topic = match message.neighborhood.as_ref() {
+                            Some(neigh) => neighborhood_topics.get(neigh),
+                            None => topics.last(),
                         }
+                        .unwrap();
+                        Some(create_record!(topic, message))
                     })
                     .collect::<Vec<_>>();
 

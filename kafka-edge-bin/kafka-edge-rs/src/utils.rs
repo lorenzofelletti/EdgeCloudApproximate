@@ -27,6 +27,9 @@ pub fn get_topics_names_for_neigborhood_wise_strategy(
         ));
     }
 
+    // add the topic for the "everything else" neighborhood
+    res.push(get_topic_name_from_neighborhood_name(config, "e"));
+
     res
 }
 
