@@ -6,7 +6,7 @@ import pyspark.sql.functions as F
 from pyspark.sql.types import StructType, StructField, StringType, DoubleType, TimestampType, TimestampNTZType
 
 KAFKA_BOOTSTRAP_SERVERS = "kafka:9092"
-KAFKA_TOPICS = "dataout_0,dataout_1,dataout_2,dataout_3,dataout_4,dataout_5,dataout_6"
+KAFKA_TOPICS = "dataout_0,dataout_1,dataout_2,dataout_3,dataout_4,dataout_5,dataout_6,dataout_e"
 
 OUTPUT_PATH = "/vol/"
 
