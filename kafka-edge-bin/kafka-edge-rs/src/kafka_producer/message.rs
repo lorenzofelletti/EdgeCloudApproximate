@@ -30,7 +30,7 @@ impl Message {
             "time": self.time,
             "speed": self.speed,
             "geohash": self.geohash.as_ref().unwrap(),
-            "neighborhood": self.neighborhood.as_ref().unwrap(),
+            "neighborhood": self.neighborhood.as_ref().unwrap_or(&String::from("")),
         })
     }
 

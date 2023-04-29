@@ -93,7 +93,7 @@ impl SendStrategy {
                     })
                     .collect::<Vec<_>>();
 
-                for chunk in records.chunks(100_000) {
+                for chunk in records.chunks(100) {
                     producer.send_all(chunk)?;
                 }
             }
