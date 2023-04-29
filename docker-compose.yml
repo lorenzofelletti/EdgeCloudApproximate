@@ -47,6 +47,7 @@ services:
     user: root
     environment:
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_DELETE_TOPIC_ENABLE=true
       - ALLOW_PLAINTEXT_LISTENER=yes
     depends_on:
       - zookeeper
@@ -57,6 +58,7 @@ services:
     user: root
     environment:
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_DELETE_TOPIC_ENABLE=true
       - ALLOW_PLAINTEXT_LISTENER=yes
     depends_on:
       - zookeeper
