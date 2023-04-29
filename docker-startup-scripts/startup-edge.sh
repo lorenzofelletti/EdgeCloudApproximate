@@ -1,4 +1,4 @@
 #!/bin/bash
-sleep 20
+sleep 12
 
 ./kafka-edge-rs -s 0.8
