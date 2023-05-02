@@ -34,7 +34,8 @@ pub fn run_kafka_producer(config: Config, _cli: &CliArgs) -> Result<(), Box<dyn 
 
     let mut start_time = Instant::now();
     let mut partition = 0;
-    for result in reader.records() {
+    let records = reader.records().count();
+    for (i, result) in reader.records().enumerate() {
         let record = result?;
         let data: Message = record.deserialize(None)?;
         let data_json = data.json_serialize();
@@ -43,7 +44,7 @@ pub fn run_kafka_producer(config: Config, _cli: &CliArgs) -> Result<(), Box<dyn 
                 .with_partition(partition);
         chunk.push(record);
 
-        if chunk.len() == chunk_size {
+        if chunk.len() == chunk_size || i == records - 1 {
             // wait for all the chunk_sleep_in_ms to pass
             let elapsed = start_time.elapsed();
             if start_time.elapsed() < config.data.chunk_sleep_in_ms {
