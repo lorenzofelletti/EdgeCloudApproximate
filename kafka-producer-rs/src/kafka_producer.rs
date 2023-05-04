@@ -44,18 +44,12 @@ pub fn run_kafka_producer(config: Config, _cli: &CliArgs) -> Result<(), Box<dyn 
         chunk.push(record);
 
         if chunk.len() == chunk_size {
-            // wait for all the chunk_sleep_in_ms to pass
-            let elapsed = start_time.elapsed();
-            if start_time.elapsed() < config.data.chunk_sleep_in_ms {
-                sleep(config.data.chunk_sleep_in_ms - elapsed);
-            }
-
-            // send the chunk
-            for rec_chunk in chunk.chunks(100) {
-                producer.send_all(&rec_chunk)?;
-            }
-
-            println!("Sent {} records", chunk.len());
+            send_chunk(
+                start_time,
+                config.data.chunk_sleep_in_ms,
+                &chunk,
+                &mut producer,
+            )?;
 
             // reset for next chunk
             chunk.clear();
@@ -64,5 +58,30 @@ pub fn run_kafka_producer(config: Config, _cli: &CliArgs) -> Result<(), Box<dyn 
         }
     }
 
+    // send the last chunk
+    send_chunk(
+        start_time,
+        config.data.chunk_sleep_in_ms,
+        &chunk,
+        &mut producer,
+    )?;
+
+    Ok(())
+}
+
+fn send_chunk(
+    start_time: Instant,
+    chunk_sleep_in_ms: Duration,
+    chunk: &Vec<Record<String, String>>,
+    producer: &mut Producer,
+) -> Result<(), Box<dyn Error>> {
+    let elapsed = start_time.elapsed();
+    if start_time.elapsed() < chunk_sleep_in_ms {
+        sleep(chunk_sleep_in_ms - elapsed);
+    }
+    for rec_chunk in chunk.chunks(100) {
+        producer.send_all(&rec_chunk)?;
+    }
+    println!("Sent {} records", chunk.len());
     Ok(())
 }
