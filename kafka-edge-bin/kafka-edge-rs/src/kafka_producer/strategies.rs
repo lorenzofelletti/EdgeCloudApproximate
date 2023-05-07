@@ -83,13 +83,13 @@ impl SendStrategy {
             SendStrategy::NeighborhoodWise => {
                 let records = messages
                     .par_iter()
-                    .filter_map(|message| {
+                    .map(|message| {
                         let topic = match message.neighborhood.as_ref() {
                             Some(neigh) => neighborhood_topics.get(neigh),
                             None => topics.last(),
                         }
                         .unwrap();
-                        Some(create_record!(topic, message))
+                        create_record!(topic, message)
                     })
                     .collect::<Vec<_>>();
 
