@@ -1,6 +1,6 @@
 [package]
 name = "kafka-edge-rs"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -16,8 +16,8 @@ toml = "0.7.3"
 whoami = "1.4.0"
 geohash = "0.13.0"
 geojson = { version =  "0.24.0", features=["geo-types"] }
-geo = "0.24.1"
-geo-types = "0.7.9"
+geo = "0.26.0"
+geo-types = "0.7.11"
 log = "0.4.17"
 env_logger = "0.10.0"
 rayon = "1.7.0"
