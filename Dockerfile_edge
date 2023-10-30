@@ -1,36 +1,24 @@
+FROM rust:1.72.0 as builder
+
+WORKDIR /usr/src/kafka-edge-bin
+COPY kafka-edge-bin .
+RUN cargo install --locked --path ./kafka-edge-rs
+
 FROM docker.io/bitnami/kafka:3.4
 
 USER root
 
 WORKDIR /
 
-RUN mkdir kafka-edge-bin/
+COPY --from=builder /usr/local/cargo/bin/kafka-edge-rs .
 
 RUN apt-get update
 RUN apt-get install -y \
     build-essential \
     libssl-dev \
     pkg-config \
-    vim \
-    git \
-    curl
+    vim
 
-## Update new packages
-RUN apt-get update
-
-# Get Rust
-RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
-
-RUN echo 'source /.cargo/env' >> /.bashrc
-ENV PATH="${PATH}:/.cargo/bin"
-
-COPY data/china /data/china
-COPY kafka-edge-bin /kafka-edge-bin
-
-# Build edge
-WORKDIR /kafka-edge-bin
-RUN cargo build --release
-RUN mv ./target/release/kafka-edge-rs /kafka-edge-rs
 # Copy config file
 COPY ./kafka-rs-configs/kafka_edge_config-edge.toml /kafka_edge_config.toml
 
