@@ -1,6 +1,7 @@
 resource "minikube_cluster" "this" {
-  driver       = "docker"
-  cluster_name = var.cluster_name
+  driver            = "docker"
+  container_runtime = "docker"
+  cluster_name      = var.cluster_name
   addons = [
     "metrics-server",
     "dashboard",
