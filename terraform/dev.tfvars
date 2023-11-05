@@ -16,3 +16,5 @@ spark_images = {
     name = "docker.io/bitnami/spark:3.3"
   }
 }
+
+cluster_name = "edge-cloud-approximate"
