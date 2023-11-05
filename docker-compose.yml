@@ -44,7 +44,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile_kafka
-    user: root
     environment:
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
       - KAFKA_CFG_DELETE_TOPIC_ENABLE=true
@@ -55,7 +54,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile_edge
-    user: root
     environment:
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
       - KAFKA_CFG_DELETE_TOPIC_ENABLE=true
