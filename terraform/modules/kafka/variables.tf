@@ -64,3 +64,16 @@ variable "replicas" {
   default     = 3
   nullable    = false
 }
+
+variable "ports" {
+  description = "Ports to expose on the Kafka service"
+  type = object({
+    broker     = optional(number, 9092)
+    controller = optional(number, 29093)
+  })
+  default = [{
+    broker     = 9092
+    controller = 29093
+  }]
+  nullable = false
+}

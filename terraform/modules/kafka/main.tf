@@ -8,10 +8,8 @@ locals {
 
   service_account_name = coalesce(var.service_account_name, var.name)
 
-  kafka_ctrl_svc_port = 29093
-
   kafka_quorum_voters = join(",", [
-    for i in range(0, var.replicas) : "${i}@${var.name}-${i}.${kubernetes_service_account_v1.this.metadata[0].name}.kafka.svc.cluster.local:${local.kafka_ctrl_svc_port}"
+    for i in range(0, var.replicas) : "${i}@${var.name}-${i}.${kubernetes_service_account_v1.this.metadata[0].name}.kafka.svc.cluster.local:${var.ports.controller}"
   ])
 }
 
@@ -56,12 +54,12 @@ resource "kubernetes_service_v1" "this" {
     ip_family_policy        = "SingleStack"
     port {
       name     = "tcp-kafka-int"
-      port     = 9092
+      port     = var.ports.broker
       protocol = "TCP"
     }
     port {
       name     = "tcp-kafka-ctrl"
-      port     = local.kafka_ctrl_svc_port
+      port     = var.ports.controller
       protocol = "TCP"
     }
     selector         = local.labels
@@ -126,11 +124,11 @@ resource "kubernetes_stateful_set_v1" "kafka" {
           }
           env {
             name  = "KAFKA_CFG_LISTENERS"
-            value = "PLAINTEXT://:9092,CONTROLLER://:${local.kafka_ctrl_svc_port}"
+            value = "PLAINTEXT://:${var.ports.broker},CONTROLLER://:${var.ports.controller}"
           }
           env {
             name  = "KAFKA_CFG_ADVERTISED_LISTENERS"
-            value = "PLAINTEXT://:9092"
+            value = "PLAINTEXT://:${var.ports.broker}"
           }
           env {
             name  = "KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP"
