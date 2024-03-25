@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: spark
+  name: spark
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: spark
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: spark
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - env:
+            - name: SPARK_MODE
+              value: master
+          image: spark
+          imagePullPolicy: Never
+          name: spark
+          ports:
+            - containerPort: 8080
+              hostPort: 8080
+              protocol: TCP
+            - containerPort: 4040
+              hostPort: 4040
+              protocol: TCP
+            - containerPort: 7077
+              hostPort: 7077
+              protocol: TCP
+            - containerPort: 5000
+              hostPort: 5000
+              protocol: TCP
+          resources:
+            limits:
+              cpu: "500m"
+              ephemeral-storage: "1Gi"
+              memory: "1Gi"
+            requests:
+              cpu: "500m"
+              ephemeral-storage: "1Gi"
+              memory: "1Gi"
+          volumeMounts:
+            - mountPath: /vol
+              name: spark-claim0
+      restartPolicy: Always
+      volumes:
+        - name: spark-claim0
+          persistentVolumeClaim:
+            claimName: spark-claim0

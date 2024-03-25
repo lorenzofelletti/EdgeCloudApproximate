@@ -1,7 +1,25 @@
+variable "create_cluster" {
+  description = "Whether to create the minikube cluster. You can use this do delete the cluster by setting it to false"
+  type        = bool
+  default     = true
+}
+
 variable "cluster_name" {
   description = "The name of the minikube cluster"
   type        = string
   default     = "edge-cloud-approximate"
+}
+
+variable "cluster_specs" {
+  description = "The specifications of the minikube cluster"
+  type = object({
+    memory = string
+    cpus   = string
+  })
+  default = {
+    memory = "4096"
+    cpus   = "4"
+  }
 }
 
 variable "edge_images" {

@@ -1,9 +1,9 @@
 edge_images = {
-  "edge0" = {
-    dockerfile = "Dockerfile_kafka"
+  "producer" = {
+    dockerfile = "Dockerfile_k8s_producer"
   }
-  "edge1" = {
-    dockerfile = "Dockerfile_edge"
+  "edge" = {
+    dockerfile = "Dockerfile_k8s_edge"
   }
 }
 

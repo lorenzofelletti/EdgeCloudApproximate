@@ -45,7 +45,6 @@ variable "service_account_name" {
     condition     = can(regex("^[a-z][a-z.-]{,252}+$", var.service_account_name))
     error_message = "service_account_name must match regex `^[a-z][a-z.-]{,252}+$`."
   }
-
 }
 
 variable "service_name_template" {

@@ -1,24 +1,35 @@
 terraform {
-  required_version = "~> 1.6.0"
+  required_version = "~> 1.7.0"
 
   required_providers {
     docker = {
       source  = "kreuzwerker/docker"
-      version = "~> 3.0.2"
+      version = "~> 3.0"
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.12.1"
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = "~> 2.23.0"
+      version = "~> 2.25"
     }
     minikube = {
       source  = "scott-the-programmer/minikube"
-      version = "~> 0.3.5"
+      version = "~> 0.3.10"
     }
   }
 }
 
 provider "docker" {
   host = "unix:///var/run/docker.sock"
+}
+
+provider "helm" {
+  kubernetes {
+    config_path    = "~/.kube/config"
+    config_context = minikube_cluster.this.cluster_name
+  }
 }
 
 provider "kubernetes" {
