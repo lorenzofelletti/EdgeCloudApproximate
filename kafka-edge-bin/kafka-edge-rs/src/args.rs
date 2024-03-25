@@ -2,7 +2,7 @@ use std::{num::NonZeroU32, path::PathBuf};
 
 use clap::{Args, Parser, Subcommand};
 
-const ABOUT: &str = "Kafka Edge Producer \n
+const ABOUT: &str = "Kafka Edge Consumer \n
 Reads from a Kafka IN topic data, samples it, and then sends it to one or more Kafka OUT topic(s). \n
 It uses a TOML configuration file, placed in the same directory as the executable, \
 for configuration.";

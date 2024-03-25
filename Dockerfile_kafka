@@ -1,49 +1,34 @@
+FROM rust:1.73.0-bullseye as builder
+
+WORKDIR /usr/src/kafka-producer-rs
+COPY kafka-producer-rs .
+RUN cargo install --locked --path .
+
+WORKDIR /usr/src/kafka-edge-bin
+COPY kafka-edge-bin .
+RUN cargo install --locked --path ./kafka-edge-rs
+
 FROM docker.io/bitnami/kafka:3.4
 
+# Copy binaries
+COPY --from=builder /usr/local/cargo/bin/kafka-edge-rs .
+COPY --from=builder /usr/local/cargo/bin/kafka-producer-rs .
+
 USER root
-
-WORKDIR /
-
-RUN mkdir kafka-producer-rs/
-RUN mkdir kafka-edge-bin/
-
-RUN apt-get update
-RUN apt-get install -y \
+RUN apt-get update && apt-get install -y \
     build-essential \
     libssl-dev \
     pkg-config \
-    vim \
-    git \
-    curl
+    vim
 
-## Update new packages
-RUN apt-get update
+USER 1001
 
-# Get Rust
-RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
+# Copy data files
+COPY data/china data/china
 
-RUN echo 'source /.cargo/env' >> /.bashrc
-ENV PATH="${PATH}:/.cargo/bin"
-
-COPY data/china /data/china
-COPY kafka-producer-rs /kafka-producer-rs
-COPY kafka-edge-bin /kafka-edge-bin
-
-# Build producer
-WORKDIR /kafka-producer-rs
-RUN cargo build --release
-RUN mv ./target/release/kafka-producer-rs /kafka-producer-rs
-# Copy config file
-COPY ./kafka-rs-configs/producer_config.toml /kafka-producer-rs/producer_config.toml
-
-# Build edge
-WORKDIR /kafka-edge-bin
-RUN cargo build --release
-RUN mv ./target/release/kafka-edge-rs /kafka-edge-rs
-# Copy config file
-COPY ./kafka-rs-configs/kafka_edge_config-kafka.toml /kafka_edge_config.toml
+# Copy config files
+COPY ./kafka-rs-configs/producer_config.toml producer_config.toml
+COPY ./kafka-rs-configs/kafka_edge_config-kafka.toml kafka_edge_config.toml
 
 # Copy startup script
-WORKDIR /
-COPY ./docker-startup-scripts/startup-kafka.sh /startup.sh
-RUN chmod +x /startup.sh
+COPY ./docker-startup-scripts/startup-kafka.sh startup.sh

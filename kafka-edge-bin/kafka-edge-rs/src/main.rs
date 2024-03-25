@@ -19,6 +19,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let config = load_config();
 
+    println!("Configuration loaded!");
+
     let cli = CliArgs::parse();
 
     match &cli.subcommands {
