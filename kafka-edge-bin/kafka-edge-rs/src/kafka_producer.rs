@@ -42,7 +42,7 @@ fn make_producer(config: Config) -> Result<Producer, kafka::Error> {
 fn make_consumer(config: Config) -> Result<Consumer, kafka::Error> {
     Consumer::from_hosts(config.kafka.brokers)
         .with_fallback_offset(kafka::consumer::FetchOffset::Earliest)
-        .with_offset_storage(kafka::consumer::GroupOffsetStorage::Kafka)
+        .with_offset_storage(Some(kafka::consumer::GroupOffsetStorage::Kafka))
         .with_group(config.data_in.consumer_group)
         .with_topic_partitions(
             config.data_in.source_topic,
