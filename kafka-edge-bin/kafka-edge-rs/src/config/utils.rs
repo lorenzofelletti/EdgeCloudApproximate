@@ -4,13 +4,14 @@ use toml::{map::Map, Value};
 
 use super::errors::{ConfigurationError, ErrorType};
 
-pub fn vec_empty_or_has_empty_strings(to_check: &Vec<String>) -> bool {
+#[inline]
+pub fn vec_empty_or_has_empty_strings(to_check: &[String]) -> bool {
     to_check.is_empty() || to_check.contains(&String::from(""))
 }
 
 /// Checks that the value for `key` is not an empty vec and that it does not contains empty strings
 pub fn check_value_not_empty_or_has_empty_strings<S: Into<String>>(
-    value: &Vec<String>,
+    value: &[String],
     key_name: S,
 ) -> Result<(), ConfigurationError> {
     if vec_empty_or_has_empty_strings(value) {

@@ -70,8 +70,7 @@ pub fn covering(geom: &Geometry<f64>, level: usize) -> Vec<String> {
     use geo::algorithm::intersects::Intersects;
     let mut ghs: Vec<String> = vec![];
     let mut queue: Vec<String> = vec!["".to_string()];
-    while !queue.is_empty() {
-        let gh = queue.pop().unwrap();
+    while let Some(gh) = queue.pop() {
         if let Some(poly) = bbox(&gh) {
             if contains(&poly, geom) || poly.intersects(geom) {
                 if gh.len() < level {
