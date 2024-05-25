@@ -13,7 +13,7 @@ pub fn edit_config_create() -> Result<(), Box<dyn Error>> {
 
     let toml_template = TOML_CONFIG_TEMPLATE.replace("{data_source}", &data_source);
 
-    fs::write(&output_path, toml_template)?;
+    fs::write(output_path, toml_template)?;
 
     Ok(())
 }
@@ -24,7 +24,7 @@ pub fn edit_config_replace(args: &ReplaceConfig) -> Result<(), Box<dyn Error>> {
 
     let new_config_contents = fs::read_to_string(args.file.clone())?;
 
-    fs::write(&output_path, new_config_contents)?;
+    fs::write(output_path, new_config_contents)?;
 
     Ok(())
 }

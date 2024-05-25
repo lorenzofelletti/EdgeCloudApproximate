@@ -56,7 +56,7 @@ fn parse_kafka_table(config: &Value) -> Result<Kafka, ConfigurationError> {
 
 /// Parses the 'data' table of the configuration file.
 fn parse_data_table(config: &Value) -> Result<Data, ConfigurationError> {
-    let data = get_table("data", &config)?;
+    let data = get_table("data", config)?;
 
     let source = data["source"].as_str().ok_or(ConfigurationError::new(
         "source",

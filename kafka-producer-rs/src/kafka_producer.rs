@@ -72,7 +72,7 @@ pub fn run_kafka_producer(config: Config, _cli: &CliArgs) -> Result<(), Box<dyn 
 fn send_chunk(
     start_time: Instant,
     chunk_sleep_in_ms: Duration,
-    chunk: &Vec<Record<String, String>>,
+    chunk: &[Record<String, String>],
     producer: &mut Producer,
 ) -> Result<(), Box<dyn Error>> {
     let elapsed = start_time.elapsed();
@@ -80,7 +80,7 @@ fn send_chunk(
         sleep(chunk_sleep_in_ms - elapsed);
     }
     for rec_chunk in chunk.chunks(100) {
-        producer.send_all(&rec_chunk)?;
+        producer.send_all(rec_chunk)?;
     }
     println!("Sent {} records", chunk.len());
     Ok(())
