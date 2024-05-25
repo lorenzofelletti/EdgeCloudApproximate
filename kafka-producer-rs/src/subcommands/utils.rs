@@ -1,6 +1,6 @@
 /// Joins a `Vec<String>` by comma except for the last element, that will not
 /// end with a comma.
-pub fn join_by_comma(zookeeper: &Vec<String>) -> String {
+pub fn join_by_comma(zookeeper: &[String]) -> String {
     zookeeper.join(",")
 }
 

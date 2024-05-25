@@ -21,8 +21,7 @@ pub fn delete_topic(config: Config) -> Result<(), Box<dyn Error>> {
     let topic_exists = client
         .topics()
         .names()
-        .into_iter()
-        .any(|topic| topic.to_owned() == config.kafka.topic);
+        .any(|topic| *topic == config.kafka.topic);
     if !topic_exists {
         println!("Topic does not exist!");
         return Ok(());

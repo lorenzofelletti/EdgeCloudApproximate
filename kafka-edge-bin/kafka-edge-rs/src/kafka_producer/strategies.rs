@@ -169,7 +169,7 @@ impl SamplingStrategy {
                 for message in messages as &[Message] {
                     groups
                         .entry(message.geohash.as_ref().unwrap())
-                        .or_insert_with(Vec::new)
+                        .or_default()
                         .push(message);
                 }
 

@@ -5,12 +5,11 @@ use crate::config::{constants::TOML_FILE_NAME, structs::Config};
 /// Returns the Path where the configuration TOML file should be placed.
 pub fn get_config_path() -> Result<PathBuf, Box<dyn Error>> {
     // Get current executable path
-    let executable_path = env::current_exe()?;
+    let mut executable_path = env::current_exe()?;
 
-    let mut output_path = executable_path;
-    output_path.set_file_name(TOML_FILE_NAME);
+    executable_path.set_file_name(TOML_FILE_NAME);
 
-    Ok(output_path)
+    Ok(executable_path)
 }
 
 /// Return the vector of the topic names to use when in `NeighborhoodWise` strategy.

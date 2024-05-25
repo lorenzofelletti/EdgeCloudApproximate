@@ -24,8 +24,7 @@ pub fn create_topic(config: Config, args: &CreateTopic) -> Result<(), Box<dyn Er
     let topic_exists = client
         .topics()
         .names()
-        .into_iter()
-        .any(|topic| topic.to_owned() == config.kafka.topic);
+        .any(|topic| *topic == config.kafka.topic);
     if topic_exists {
         println!("Topic already exists!");
         return Ok(());
