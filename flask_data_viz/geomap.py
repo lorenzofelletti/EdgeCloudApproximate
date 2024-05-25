@@ -28,13 +28,13 @@ def process_data(data: pd.DataFrame, time: str):
 
     # Create a map centered on the first geohash in the dataset
     #map = folium.Map(location=[data['lat'][0], data['lon'][0]], zoom_start=10)
-    map = folium.Map(location=[22.59, 114.11], zoom_start=10)
+    centered_map = folium.Map(location=[22.59, 114.11], zoom_start=10)
 
     for _, row in data.iterrows():
         bounds = get_rectangles_bounds(row['geohash'])
         if bounds is None:
             continue
 
-        folium.Rectangle(bounds=bounds, color=row['color'], fill=True, fill_color=row['color'], popup="%.2f" % round(row['avg_speed'], 2)).add_to(map)
+        folium.Rectangle(bounds=bounds, color=row['color'], fill=True, fill_color=row['color'], popup="%.2f" % round(row['avg_speed'], 2)).add_to(centered_map)
     
-    map.save('templates/map.html')
+    centered_map.save('templates/map.html')
