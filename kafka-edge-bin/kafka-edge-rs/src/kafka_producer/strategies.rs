@@ -21,19 +21,18 @@ pub enum SendStrategy {
     ///
     /// # Notes
     /// ## How does this strategy work?
-    /// Note that this strategy will output data to `N` different topis, where
-    /// `N` is the number of neighborhoods read from the file, named in
-    /// ascending number (from 1). The topics names share the `taget_topic`
-    /// string set in the configuration TOML file as common prefix.
+    /// Note that this strategy will output data to `N` different topics, where
+    /// `N` is the number of neighborhoods read from the config GeoJSON file
+    /// The topics names share the `taget_topic` string set in the configuration
+    /// TOML file as common prefix.
     ///
     /// For example, if the config file contains `taget_topic = "dataout-"`,
-    /// the output topics will be named `dataout-1`, `dataout-1`, etc.
+    /// the output topics will be named `dataout-0`, `dataout-1`, etc.
     ///
     /// ## Are topics automatically created?
     /// No, the topics are not automatically created. You need to either create
-    /// them manualy beforhand, or run this program with
-    /// `topic create out --for-nbw-strat` a first time before running it to
-    /// send data.
+    /// them manualy beforehand, or run the subcommand
+    /// `topic create out --for-nbw-strat` before sending data.
     NeighborhoodWise,
 }
 

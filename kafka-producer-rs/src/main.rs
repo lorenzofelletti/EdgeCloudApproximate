@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use args::{CliArgs, EditConfigCommands};
 use clap::Parser;
 use config::load_config;
@@ -9,13 +11,15 @@ use subcommands::{
     edit_config::{edit_config_create, edit_config_replace},
 };
 
+use crate::kafka_producer::{message, message::Message};
+
 mod args;
 mod config;
 mod kafka_producer;
 mod subcommands;
 mod utils;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn Error>> {
     let config = load_config();
 
     let cli = CliArgs::parse();
@@ -36,7 +40,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         },
         None => {
-            run_kafka_producer(config?.clone(), &cli)?;
+            let config = config?;
+            match config.data.message_type {
+                kafka_producer::message::MessageType::Message => {
+                    run_kafka_producer::<Message>(config, &cli)?;
+                }
+                kafka_producer::message::MessageType::Value => {
+                    let config_key = config
+                        .data
+                        .key
+                        .clone()
+                        .ok_or("key required for value messages, but not found in config")?;
+
+                    {
+                        // sets the key, and release the lock
+                        let mut key = message::KEY.write()?;
+                        *key = config_key;
+                    }
+
+                    run_kafka_producer::<serde_json::Value>(config, &cli)?;
+                }
+            }
         }
     }
 

@@ -7,7 +7,7 @@ use std::{
 
 use toml::Value;
 
-use crate::utils::get_config_path;
+use crate::{kafka_producer::message::MessageType, utils::get_config_path};
 
 use self::{
     errors::{ConfigurationError, ErrorType},
@@ -74,11 +74,19 @@ fn parse_data_table(config: &Value) -> Result<Data, ConfigurationError> {
     let chunk_sleep_in_ms = read_integer_key_from_table("data", "chunk_sleep_in_ms", &data)?;
     let chunk_sleep_in_ms: u64 = from_i64_to_u64(chunk_sleep_in_ms)?;
     let chunk_sleep_in_ms: Duration = Duration::from_millis(chunk_sleep_in_ms);
+
+    let mtype = data["message_type"].as_str().unwrap_or_default();
+    let message_type = MessageType::from(mtype);
+
+    let key: Option<String> = data["key"].as_str().map(|k| k.into());
+
     Ok(Data {
         source,
         msg_sleep_in_ms,
         chunk_size,
         chunk_sleep_in_ms,
+        message_type,
+        key,
     })
 }
 

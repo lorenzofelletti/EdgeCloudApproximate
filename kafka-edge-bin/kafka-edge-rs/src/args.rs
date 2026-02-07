@@ -36,6 +36,10 @@ pub enum Commands {
     #[command(name = "geojson")]
     /// GeoJSON related commands
     Geojson(Geojson),
+
+    #[command(name = "")]
+    /// Reads from Kafka, but stores the results on 1-N CSV files.
+    CSVProducer(CSVProducer),
 }
 
 #[derive(Args)]
@@ -148,4 +152,15 @@ pub struct Neighborhoods {
     #[arg(long, default_value = "name")]
     /// name of the property containing the neighborhood name.
     pub name_property: Option<String>,
+}
+
+#[derive(Args)]
+pub struct CSVProducer {
+    #[arg(short, long, default_value_t = 0.5)]
+    /// The sampling percentage; i.e. how many of the incoming messages to keep, in percentage
+    pub sampling_percentage: f64,
+
+    #[arg(long)]
+    /// Override the strategy indicated in the TOML configuration file
+    pub override_send_strategy: Option<String>,
 }

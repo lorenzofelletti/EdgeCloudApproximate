@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use args::{CliArgs, EditConfigCommands, TopicCommands};
 use clap::Parser;
 use config::load_config;
@@ -11,12 +13,13 @@ use crate::subcommands::geojson::show_neighborhoods;
 
 mod args;
 mod config;
+mod csv_producer;
 mod geospatial;
 mod kafka_producer;
 mod subcommands;
 mod utils;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
 
     let config = load_config();
@@ -42,6 +45,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 show_neighborhoods(config, neighborhoods)
             }
         },
+        Some(args::Commands::CSVProducer(producer)) => {
+            csv_producer::run_producer(config?, &producer)
+        }
         None => run_producer(config?, &cli),
     }
 }
