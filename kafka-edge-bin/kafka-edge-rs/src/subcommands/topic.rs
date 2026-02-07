@@ -7,7 +7,7 @@ use std::{
 use kafka::client::KafkaClient;
 
 use crate::{
-    args::TopicCreateArgs,
+    args::{TopicCreateArgs, TopicDeleteArgs},
     config::structs::Config,
     geospatial::read_neighborhoods,
     subcommands::{errors::SubcommandError, utils::join_by_comma},
@@ -106,4 +106,37 @@ pub fn topic_create(config: &Config, args: &TopicCreateArgs) -> Result<(), Box<d
 
 fn topic_exists(client: KafkaClient, topic: &String) -> bool {
     client.topics().names().any(|t| t == topic)
+}
+
+pub fn topic_delete(config: Config, args: &TopicDeleteArgs) -> Result<(), Box<dyn Error>> {
+    let topic = match args.topic.to_lowercase().as_str() {
+        "out" => config.data_out.target_topic.clone(),
+        _ => return Err("unsupported".into()),
+    };
+
+    // Connect to Kafka and fetch the metadata for the topic
+    let mut client = KafkaClient::new(config.kafka.brokers.clone());
+    client.load_metadata_all()?;
+
+    if !topic_exists(client, &topic) {
+        println!("Topic {} does not exist!", topic);
+        return Ok(());
+    }
+
+    let zookeeper = join_by_comma(&config.kafka.zookeeper);
+
+    let res = Command::new("kafka-topics.sh")
+        .arg("--zookeeper")
+        .arg(zookeeper)
+        .arg("--delete")
+        .arg("--topic")
+        .arg(topic)
+        .output()?;
+
+    println!("{}", String::from_utf8_lossy(&res.stdout));
+
+    if ExitStatus::success(&res.status) {
+        return Ok(());
+    }
+    Err(Box::new(SubcommandError::new("Unable to delete topic.")))
 }

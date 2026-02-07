@@ -4,7 +4,7 @@ use config::load_config;
 use kafka_producer::run_producer;
 use subcommands::{
     config::{config_create, config_replace, config_show},
-    topic::topic_create,
+    topic::{topic_create, topic_delete},
 };
 
 mod args;
@@ -31,7 +31,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let config = config?;
             match &topic.subcommands {
                 TopicCommands::Create(args) => topic_create(&config, args),
-                TopicCommands::Delete(_args) => todo!(),
+                TopicCommands::Delete(args) => topic_delete(config, args),
             }
         }
         None => run_producer(config?, &cli),
