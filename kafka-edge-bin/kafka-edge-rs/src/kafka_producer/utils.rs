@@ -1,6 +1,8 @@
 #[macro_export]
 macro_rules! skip_fail {
-    ($res:expr) => {
+    ($res:expr) => {{
+        use log::warn;
+
         match $res {
             Ok(val) => val,
             Err(e) => {
@@ -8,7 +10,7 @@ macro_rules! skip_fail {
                 continue;
             }
         }
-    };
+    }};
 }
 
 #[macro_export]
@@ -26,15 +28,17 @@ macro_rules! skip_none {
 
 #[macro_export]
 macro_rules! create_record {
-    ($topic:expr, $msg:expr) => {
+    ($topic:expr, $msg:expr) => {{
+        use $crate::kafka_producer::message::JSONMessage as _;
         Record::from_key_value(&$topic, $msg.id.clone(), $msg.json_serialize().to_string())
-    };
+    }};
 }
 
 #[macro_export]
 macro_rules! create_record_with_partition {
-    ($topic:expr, $msg:expr, $partition:expr) => {
+    ($topic:expr, $msg:expr, $partition:expr) => {{
+        use $crate::kafka_producer::message::JSONMessage as _;
         Record::from_key_value(&$topic, $msg.id.clone(), $msg.json_serialize().to_string())
             .with_partition($partition)
-    };
+    }};
 }

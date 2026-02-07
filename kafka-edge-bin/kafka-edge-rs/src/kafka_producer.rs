@@ -5,7 +5,6 @@ use kafka::{
     consumer::Consumer,
     producer::{Producer, RequiredAcks},
 };
-use log::warn;
 
 use crate::{
     args::CliArgs,
@@ -13,6 +12,7 @@ use crate::{
     geospatial::{
         get_geohashes_map_from_features, invert_neighborhood_geohashes_map, read_neighborhoods,
     },
+    kafka_producer::message::{GeoMessage as _, JSONMessage as _},
     skip_fail,
     utils::get_topics_names_for_neigborhood_wise_strategy,
 };

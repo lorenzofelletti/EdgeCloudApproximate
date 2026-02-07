@@ -205,6 +205,8 @@ impl SamplingStrategy {
 mod tests {
     use geo::Coord;
 
+    use crate::kafka_producer::message::GeoMessage as _;
+
     use super::*;
 
     fn get_random_vec_msgs_of_len(len: usize) -> Vec<Message> {
