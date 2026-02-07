@@ -1,4 +1,4 @@
-use std::{collections::HashMap, error::Error};
+use std::{cell::Cell, collections::HashMap, error::Error};
 
 use geojson::Feature;
 use kafka::consumer::Consumer;
@@ -38,6 +38,9 @@ pub fn run_producer(config: Config, args: &CSVProducer) -> Result<(), Box<dyn Er
     let mut consumer = make_consumer(config.clone())?;
     load_consumer_metadata(&config, &mut consumer)?;
 
+    let messages: Vec<Message> = Vec::<_>::with_capacity(1000);
+    let mut messages = Cell::new(messages);
+
     println!("Starting to process messages...");
 
     let mut start_time = std::time::Instant::now();
@@ -60,15 +63,11 @@ pub fn run_producer(config: Config, args: &CSVProducer) -> Result<(), Box<dyn Er
                 "Sampling done! (took {}ms)",
                 elab_time.elapsed().as_millis()
             );
-            send_strategy.send(
-                &mut producer,
-                messages.get_mut(),
-                &topics,
-                partitions,
-                &neighborhood_topics,
-            )?;
+
+            // save to csv according to neighborhood
+
             println!(
-                "{} messages sent! (took {}ms)",
+                "{} messages stored! (took {}ms)",
                 messages.get_mut().len(),
                 elab_time.elapsed().as_millis()
             );
