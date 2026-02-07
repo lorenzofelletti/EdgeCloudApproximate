@@ -11,6 +11,7 @@ pub struct Kafka {
 #[derive(Debug, Clone)]
 pub struct Data {
     pub source: PathBuf,
+    #[allow(unused)]
     pub msg_sleep_in_ms: Duration,
     pub chunk_size: NonZeroU64,
     pub chunk_sleep_in_ms: Duration,

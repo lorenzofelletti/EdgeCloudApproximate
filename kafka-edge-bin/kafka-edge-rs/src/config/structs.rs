@@ -4,6 +4,7 @@ use crate::kafka_producer::strategies::{SamplingStrategy, SendStrategy};
 
 #[derive(Debug, Clone)]
 pub struct Kafka {
+    #[allow(unused)]
     pub zookeeper: Vec<String>,
     pub brokers: Vec<String>,
 }
