@@ -7,6 +7,8 @@ use subcommands::{
     topic::{topic_create, topic_delete},
 };
 
+use crate::subcommands::geojson::show_neighborhoods;
+
 mod args;
 mod config;
 mod geospatial;
@@ -34,6 +36,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 TopicCommands::Delete(args) => topic_delete(config, args),
             }
         }
+        Some(args::Commands::Geojson(geojson)) => match &geojson.subcommands {
+            args::GeojsonCommands::Neighborhoods(neighborhoods) => {
+                let config = config.ok();
+                show_neighborhoods(config, neighborhoods)
+            }
+        },
         None => run_producer(config?, &cli),
     }
 }

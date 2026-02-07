@@ -32,6 +32,10 @@ pub enum Commands {
     #[command(name = "config")]
     /// Create or edit configuration
     EditConfig(EditConfig),
+
+    #[command(name = "geojson")]
+    /// GeoJSON related commands
+    Geojson(Geojson),
 }
 
 #[derive(Args)]
@@ -50,6 +54,19 @@ pub enum TopicCommands {
 pub struct EditConfig {
     #[command(subcommand)]
     pub subcommands: EditConfigCommands,
+}
+
+#[derive(Args)]
+pub struct Geojson {
+    #[command(subcommand)]
+    pub subcommands: GeojsonCommands,
+}
+
+#[derive(Subcommand)]
+pub enum GeojsonCommands {
+    #[command(name = "neighborhoods")]
+    /// Get neighborhoods from a geojson file
+    Neighborhoods(Neighborhoods),
 }
 
 #[derive(Args)]
@@ -116,4 +133,19 @@ pub struct CreateConfig {
 
     #[arg(long)]
     pub target_topic: Option<String>,
+}
+
+#[derive(Args)]
+pub struct Neighborhoods {
+    #[arg()]
+    /// Path to the GeoJSON file
+    pub file_path: Option<String>,
+
+    #[arg(long, short = 'g', action = clap::ArgAction::SetTrue)]
+    /// Show the generated topic names, instead of the neighborhood names.
+    pub show_generated_topic_names: bool,
+
+    #[arg(long, default_value = "name")]
+    /// name of the property containing the neighborhood name.
+    pub name_property: Option<String>,
 }

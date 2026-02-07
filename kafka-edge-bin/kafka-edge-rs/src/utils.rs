@@ -33,6 +33,31 @@ pub fn get_topics_names_for_neigborhood_wise_strategy(
     res
 }
 
+pub fn get_neighborhoods_names<S: Into<String>>(
+    features: &[geojson::Feature],
+    name_property: S,
+) -> Result<Vec<String>, String>
+where
+    S: Into<String>,
+{
+    let name_property: String = name_property.into();
+
+    let mut res = Vec::with_capacity(features.len());
+
+    for (i, feature) in features.iter().enumerate() {
+        let name = feature
+            .property(name_property.clone())
+            .ok_or(format!(
+                "failed to read property \"{name_property}\" at index \"{i}\""
+            ))?
+            .as_str()
+            .ok_or(format!("failed to convert value  to string at index {i}"))?;
+        res.push(name.to_string());
+    }
+
+    Ok(res)
+}
+
 pub fn get_topic_name_from_neighborhood_name(config: &Config, neighborhood: &str) -> String {
     // remove from the neighborhood name the spaces and the quotes
     let neighborhood = neighborhood.replace([' ', '"'], "");
