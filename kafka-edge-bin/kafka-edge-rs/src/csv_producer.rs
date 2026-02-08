@@ -15,7 +15,7 @@ use crate::{
     geospatial::{
         get_geohashes_map_from_features, invert_neighborhood_geohashes_map, read_neighborhoods,
     },
-    kafka_producer::message::{GeoMessage, JSONMessage, WithNeighborhood},
+    kafka_producer::message::{GeoMessage, JSONMessage, WithNeighborhood, LAT_KEY, LON_KEY},
     skip_fail,
     utils::get_topics_names_for_neigborhood_wise_strategy,
 };
@@ -24,6 +24,14 @@ pub fn run_producer<M>(config: Config, args: &CSVProducer) -> Result<(), Box<dyn
 where
     M: serde::Serialize + Clone + Sync + GeoMessage + JSONMessage + WithNeighborhood,
 {
+    {
+        // sets the lat/lon keys
+        let mut key = LAT_KEY.write()?;
+        *key = args.lat_key.clone();
+        let mut key = LON_KEY.write()?;
+        *key = args.lat_key.clone();
+    }
+
     let sampling_strategy = config.data_out.sampling_strategy;
     let sampling_percentage = args.sampling_percentage;
 

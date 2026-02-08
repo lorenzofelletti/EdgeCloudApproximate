@@ -167,4 +167,13 @@ pub struct CSVProducer {
     #[arg()]
     /// Where to store the CSV files
     pub out_dir: String,
+
+    #[arg(long, short = 'r', action = clap::ArgAction::SetTrue)]
+    pub raw_json_messages: bool,
+
+    #[arg(long, short = 'l', default_value = "lat")]
+    pub lat_key: String,
+
+    #[arg(long, short = 'g', default_value = "lon")]
+    pub lon_key: String,
 }

@@ -46,7 +46,11 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         },
         Some(args::Commands::CSVProducer(producer)) => {
-            csv_producer::run_producer::<Message>(config?, &producer)
+            if producer.raw_json_messages {
+                csv_producer::run_producer::<serde_json::Value>(config?, &producer)
+            } else {
+                csv_producer::run_producer::<Message>(config?, &producer)
+            }
         }
         None => run_producer(config?, &cli),
     }

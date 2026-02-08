@@ -1,7 +1,12 @@
+use std::sync::RwLock;
+
 use geohash::{Coord, GeohashError};
 
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Error, Value};
+use serde_json::{json, Error, Number, Value};
+
+pub static LAT_KEY: RwLock<String> = RwLock::new(String::new());
+pub static LON_KEY: RwLock<String> = RwLock::new(String::new());
 
 pub trait GeoMessage {
     fn geohash(&self) -> Result<String, GeohashError>;
@@ -87,7 +92,26 @@ impl JSONMessage for Message {
 
 impl GeoMessage for Value {
     fn geohash(&self) -> Result<String, GeohashError> {
-        todo!()
+        let minus_one = Number::from_f64(-1.0).unwrap();
+
+        let lat_key = LAT_KEY.read().unwrap().clone();
+        let lon_key = LON_KEY.read().unwrap().clone();
+        let lat = self
+            .get(lat_key)
+            .unwrap_or(&Value::Null)
+            .as_number()
+            .unwrap_or(&minus_one)
+            .as_f64()
+            .unwrap_or(-1.0);
+        let lon = self
+            .get(lon_key)
+            .unwrap_or(&Value::Null)
+            .as_number()
+            .unwrap_or(&minus_one)
+            .as_f64()
+            .unwrap_or(-1.0);
+
+        geohash::encode(Coord { x: lat, y: lon }, 6)
     }
 
     fn set_geohash(&mut self, geohash: String) {
