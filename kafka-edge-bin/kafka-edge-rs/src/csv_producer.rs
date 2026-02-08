@@ -24,10 +24,7 @@ pub fn run_producer(config: Config, args: &CSVProducer) -> Result<(), Box<dyn Er
     let geohash_neighborhood_map = invert_neighborhood_geohashes_map(&neighborhood_geohashes_map);
 
     let files: Vec<_> =
-        get_topics_names_for_neigborhood_wise_strategy(&config.clone(), features.as_slice())
-            .iter()
-            .map(|f| format!("{f}.csv"))
-            .collect();
+        get_topics_names_for_neigborhood_wise_strategy(&config.clone(), features.as_slice());
 
     // map each neighborhood to a file name
     let neighborhood_files: HashMap<_, String> = neighborhood_geohashes_map
