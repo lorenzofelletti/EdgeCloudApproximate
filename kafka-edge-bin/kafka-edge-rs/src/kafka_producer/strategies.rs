@@ -146,7 +146,7 @@ impl SamplingStrategy {
     /// The `messages` vector is modified in-place.
     pub fn sample<M>(&self, sampling_percentage: f64, messages: &mut Vec<M>)
     where
-        M: GeoMessage,
+        M: Sized + Sync + Clone + GeoMessage,
     {
         if sampling_percentage == 1.0 || messages.is_empty() {
             return;
@@ -169,15 +169,14 @@ impl SamplingStrategy {
                  * sample is taken from each group. */
                 let total_size = messages.len();
                 let sample_size = total_size as f64 * sampling_percentage;
-                let mut groups: HashMap<&str, Vec<&M>> = HashMap::new();
+                let mut groups: HashMap<String, Vec<&M>> = HashMap::new();
                 for message in messages as &[M] {
-                    groups
-                        .entry(message.geohash().as_ref().unwrap())
-                        .or_insert_with(Vec::new)
-                        .push(message);
+                    let geohash = message.geohash().unwrap();
+
+                    groups.entry(geohash).or_insert_with(Vec::new).push(message);
                 }
 
-                let mut sample_sizes: HashMap<&str, usize> = HashMap::new();
+                let mut sample_sizes: HashMap<&String, usize> = HashMap::new();
                 for (geohash, group) in &groups {
                     if group.len() == 1 {
                         sample_sizes.insert(
@@ -190,7 +189,7 @@ impl SamplingStrategy {
                     }
                 }
 
-                let sampled_groups: Vec<Vec<&Message>> = groups
+                let sampled_groups: Vec<Vec<&M>> = groups
                     .par_iter()
                     .map(|(geohash, group)| {
                         group

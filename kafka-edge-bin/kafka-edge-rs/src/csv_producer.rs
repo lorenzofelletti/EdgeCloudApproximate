@@ -22,7 +22,7 @@ use crate::{
 
 pub fn run_producer<M>(config: Config, args: &CSVProducer) -> Result<(), Box<dyn Error>>
 where
-    M: serde::Serialize + GeoMessage + JSONMessage + WithNeighborhood,
+    M: serde::Serialize + Clone + Sync + GeoMessage + JSONMessage + WithNeighborhood,
 {
     let sampling_strategy = config.data_out.sampling_strategy;
     let sampling_percentage = args.sampling_percentage;
