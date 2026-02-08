@@ -37,7 +37,7 @@ pub enum Commands {
     /// GeoJSON related commands
     Geojson(Geojson),
 
-    #[command(name = "")]
+    #[command(name = "csv")]
     /// Reads from Kafka, but stores the results on 1-N CSV files.
     CSVProducer(CSVProducer),
 }
@@ -163,4 +163,8 @@ pub struct CSVProducer {
     #[arg(long)]
     /// Override the strategy indicated in the TOML configuration file
     pub override_send_strategy: Option<String>,
+
+    #[arg()]
+    /// Where to store the CSV files
+    pub out_dir: String,
 }

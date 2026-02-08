@@ -5,6 +5,12 @@ use serde_json::{json, Error, Value};
 
 pub trait GeoMessage {
     fn geohash(&self) -> Result<String, GeohashError>;
+    fn set_geohash(&mut self, geohash: String);
+}
+
+pub trait WithNeighborhood {
+    fn set_neighborhood(&mut self, neighborhood: String);
+    fn neighborhood(&self) -> Option<String>;
 }
 
 pub trait JSONMessage
@@ -40,6 +46,20 @@ impl GeoMessage for Message {
             6,
         )
     }
+
+    fn set_geohash(&mut self, geohash: String) {
+        self.geohash = Some(geohash);
+    }
+}
+
+impl WithNeighborhood for Message {
+    fn set_neighborhood(&mut self, neighborhood: String) {
+        self.neighborhood = Some(neighborhood);
+    }
+
+    fn neighborhood(&self) -> Option<String> {
+        return self.neighborhood.clone();
+    }
 }
 
 impl JSONMessage for Message {
@@ -68,6 +88,21 @@ impl JSONMessage for Message {
 impl GeoMessage for Value {
     fn geohash(&self) -> Result<String, GeohashError> {
         todo!()
+    }
+
+    fn set_geohash(&mut self, geohash: String) {
+        *self.get_mut("geohash").unwrap() = json!(geohash);
+    }
+}
+
+impl WithNeighborhood for Value {
+    fn set_neighborhood(&mut self, neighborhood: String) {
+        *self.get_mut("neighborhood").unwrap() = json!(neighborhood);
+    }
+
+    fn neighborhood(&self) -> Option<String> {
+        self.get("neighborhood")
+            .map(|n| n.as_str().unwrap_or_default().to_string())
     }
 }
 

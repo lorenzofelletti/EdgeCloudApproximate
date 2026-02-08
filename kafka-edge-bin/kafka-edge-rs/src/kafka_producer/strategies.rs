@@ -5,7 +5,9 @@ use kafka::producer::{Producer, Record};
 use rand::{seq::IteratorRandom, Rng};
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
-use crate::{create_record, create_record_with_partition, either};
+use crate::{
+    create_record, create_record_with_partition, either, kafka_producer::message::GeoMessage,
+};
 
 use super::message::Message;
 
@@ -142,7 +144,10 @@ impl SamplingStrategy {
     ///
     /// # Notes
     /// The `messages` vector is modified in-place.
-    pub fn sample(&self, sampling_percentage: f64, messages: &mut Vec<Message>) {
+    pub fn sample<M>(&self, sampling_percentage: f64, messages: &mut Vec<M>)
+    where
+        M: GeoMessage,
+    {
         if sampling_percentage == 1.0 || messages.is_empty() {
             return;
         }
@@ -164,10 +169,10 @@ impl SamplingStrategy {
                  * sample is taken from each group. */
                 let total_size = messages.len();
                 let sample_size = total_size as f64 * sampling_percentage;
-                let mut groups: HashMap<&str, Vec<&Message>> = HashMap::new();
-                for message in messages as &[Message] {
+                let mut groups: HashMap<&str, Vec<&M>> = HashMap::new();
+                for message in messages as &[M] {
                     groups
-                        .entry(message.geohash.as_ref().unwrap())
+                        .entry(message.geohash().as_ref().unwrap())
                         .or_insert_with(Vec::new)
                         .push(message);
                 }

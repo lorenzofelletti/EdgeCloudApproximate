@@ -1,4 +1,10 @@
-use std::{cell::Cell, collections::HashMap, error::Error, fs::OpenOptions, path::Path};
+use std::{
+    cell::Cell,
+    collections::HashMap,
+    error::Error,
+    fs::OpenOptions,
+    path::{Path, PathBuf},
+};
 
 use geojson::Feature;
 use kafka::consumer::Consumer;
@@ -9,12 +15,15 @@ use crate::{
     geospatial::{
         get_geohashes_map_from_features, invert_neighborhood_geohashes_map, read_neighborhoods,
     },
-    kafka_producer::message::{GeoMessage as _, JSONMessage as _, Message},
+    kafka_producer::message::{GeoMessage, JSONMessage, WithNeighborhood},
     skip_fail,
     utils::get_topics_names_for_neigborhood_wise_strategy,
 };
 
-pub fn run_producer(config: Config, args: &CSVProducer) -> Result<(), Box<dyn Error>> {
+pub fn run_producer<M>(config: Config, args: &CSVProducer) -> Result<(), Box<dyn Error>>
+where
+    M: serde::Serialize + GeoMessage + JSONMessage + WithNeighborhood,
+{
     let sampling_strategy = config.data_out.sampling_strategy;
     let sampling_percentage = args.sampling_percentage;
 
@@ -36,8 +45,18 @@ pub fn run_producer(config: Config, args: &CSVProducer) -> Result<(), Box<dyn Er
     let mut consumer = make_consumer(config.clone())?;
     load_consumer_metadata(&config, &mut consumer)?;
 
-    let messages: Vec<Message> = Vec::<_>::with_capacity(1000);
+    let messages: Vec<M> = Vec::<_>::with_capacity(1000);
     let mut messages = Cell::new(messages);
+
+    let base_path = Path::new(&args.out_dir);
+
+    if !base_path.is_dir() {
+        return Err(format!(
+            "given path \"{}\" is not a directory",
+            base_path.to_string_lossy()
+        )
+        .into());
+    }
 
     println!("Starting to process messages...");
 
@@ -45,11 +64,13 @@ pub fn run_producer(config: Config, args: &CSVProducer) -> Result<(), Box<dyn Er
     loop {
         for message_set in consumer.poll().unwrap().iter() {
             for message in message_set.messages().iter() {
-                let mut message = skip_fail!(Message::json_deserialize(message.value));
+                let mut message = skip_fail!(M::json_deserialize(message.value));
                 // set message's geohash and neighborhood
                 let gh = skip_fail!(message.geohash());
-                message.geohash = Some(gh.clone());
-                message.neighborhood = geohash_neighborhood_map.get(&gh).cloned();
+                message.set_geohash(gh.clone());
+                if let Some(n) = geohash_neighborhood_map.get(&gh) {
+                    message.set_neighborhood(n.clone());
+                }
                 messages.get_mut().push(message);
             }
         }
@@ -63,9 +84,9 @@ pub fn run_producer(config: Config, args: &CSVProducer) -> Result<(), Box<dyn Er
             );
 
             // save to csv according to neighborhood
-            let mut groups: HashMap<&String, Vec<&Message>> = HashMap::new();
+            let mut groups: HashMap<&String, Vec<&M>> = HashMap::new();
             for message in messages.get_mut().iter() {
-                let topic = match message.neighborhood.as_ref() {
+                let topic = match message.neighborhood().as_ref() {
                     Some(neigh) => neighborhood_files.get(neigh),
                     None => files.last(),
                 };
@@ -77,7 +98,7 @@ pub fn run_producer(config: Config, args: &CSVProducer) -> Result<(), Box<dyn Er
 
             for (topic, msgs) in groups {
                 let filename = format!("{}.csv", topic);
-                let path = Path::new(&filename);
+                let path = PathBuf::new().join(base_path).join(filename);
                 let file_exists = path.exists();
 
                 let file = OpenOptions::new().create(true).append(true).open(path)?;

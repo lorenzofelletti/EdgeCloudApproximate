@@ -9,7 +9,7 @@ use subcommands::{
     topic::{topic_create, topic_delete},
 };
 
-use crate::subcommands::geojson::show_neighborhoods;
+use crate::{kafka_producer::message::Message, subcommands::geojson::show_neighborhoods};
 
 mod args;
 mod config;
@@ -46,7 +46,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         },
         Some(args::Commands::CSVProducer(producer)) => {
-            csv_producer::run_producer(config?, &producer)
+            csv_producer::run_producer::<Message>(config?, &producer)
         }
         None => run_producer(config?, &cli),
     }
