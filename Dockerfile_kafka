@@ -1,14 +1,23 @@
-FROM docker.io/bitnami/kafka:3.4
+FROM rust:1-slim-trixie AS builder-producer
+
+WORKDIR /build
+COPY kafka-producer-rs .
+RUN cargo build --release
+
+FROM rust:1-slim-trixie AS builder-edge
+
+WORKDIR /build
+COPY kafka-edge-bin .
+RUN cargo build --release
+
+
+FROM docker.io/bitnamilegacy/kafka:3.4
 
 USER root
 
 WORKDIR /
 
-RUN mkdir kafka-producer-rs/
-RUN mkdir kafka-edge-bin/
-
-RUN apt-get update
-RUN apt-get install -y \
+RUN apt-get update. && apt-get install -y \
     build-essential \
     libssl-dev \
     pkg-config \
@@ -16,34 +25,17 @@ RUN apt-get install -y \
     git \
     curl
 
-## Update new packages
-RUN apt-get update
-
-# Get Rust
-RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
-
-RUN echo 'source /.cargo/env' >> /.bashrc
-ENV PATH="${PATH}:/.cargo/bin"
-
-COPY data/china /data/china
-COPY kafka-producer-rs /kafka-producer-rs
-COPY kafka-edge-bin /kafka-edge-bin
-
 # Build producer
-WORKDIR /kafka-producer-rs
-RUN cargo build --release
+COPY --from=builder-producer /build/target/release/kafka-producer-rs /kafka-producer-rs
 RUN mv ./target/release/kafka-producer-rs /kafka-producer-rs
 # Copy config file
-COPY ./kafka-rs-configs/producer_config.toml /kafka-producer-rs/producer_config.toml
+COPY ./kafka-rs-configs/producer_config.toml /producer_config.toml
 
 # Build edge
-WORKDIR /kafka-edge-bin
-RUN cargo build --release
-RUN mv ./target/release/kafka-edge-rs /kafka-edge-rs
+COPY --from=builder-edge /build/target/release/kafka-edge-rs /kafka-edge-rs
 # Copy config file
 COPY ./kafka-rs-configs/kafka_edge_config-kafka.toml /kafka_edge_config.toml
 
 # Copy startup script
-WORKDIR /
 COPY ./docker-startup-scripts/startup-kafka.sh /startup.sh
 RUN chmod +x /startup.sh

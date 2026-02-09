@@ -1,4 +1,10 @@
-FROM docker.io/bitnami/kafka:3.4
+FROM rust:1-slim-trixie AS builder
+
+WORKDIR /build
+COPY kafka-edge-bin .
+RUN cargo build --release
+
+FROM docker.io/bitnamilegacy/kafka:3.4
 
 USER root
 
@@ -6,8 +12,7 @@ WORKDIR /
 
 RUN mkdir kafka-edge-bin/
 
-RUN apt-get update
-RUN apt-get install -y \
+RUN apt-get update && apt-get install -y \
     build-essential \
     libssl-dev \
     pkg-config \
@@ -18,19 +23,8 @@ RUN apt-get install -y \
 ## Update new packages
 RUN apt-get update
 
-# Get Rust
-RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
-
-RUN echo 'source /.cargo/env' >> /.bashrc
-ENV PATH="${PATH}:/.cargo/bin"
-
-COPY data/china /data/china
-COPY kafka-edge-bin /kafka-edge-bin
-
 # Build edge
-WORKDIR /kafka-edge-bin
-RUN cargo build --release
-RUN mv ./target/release/kafka-edge-rs /kafka-edge-rs
+COPY --from=builder-edge /build/target/release/kafka-edge-rs /kafka-edge-rs
 # Copy config file
 COPY ./kafka-rs-configs/kafka_edge_config-edge.toml /kafka_edge_config.toml
 
