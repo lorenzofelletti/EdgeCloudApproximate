@@ -16,7 +16,6 @@ RUN apt-get install -y \
 ## Update new packages
 RUN apt-get update
 
-COPY data/china /data/china
 COPY cloud_analytics /cloud_analytics
 
 # Setup flask web app
