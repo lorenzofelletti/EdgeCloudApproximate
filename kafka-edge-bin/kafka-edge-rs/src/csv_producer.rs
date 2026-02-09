@@ -17,7 +17,9 @@ use crate::{
     geospatial::{
         get_geohashes_map_from_features, invert_neighborhood_geohashes_map, read_neighborhoods,
     },
-    kafka_producer::message::{GeoMessage, JSONMessage, WithNeighborhood, LAT_KEY, LON_KEY},
+    kafka_producer::message::{
+        GeoMessage, JSONMessage, JSONMessageDeserialize, WithNeighborhood, LAT_KEY, LON_KEY,
+    },
     skip_fail,
     utils::get_topics_names_for_neigborhood_wise_strategy,
 };
@@ -141,7 +143,7 @@ where
         + Clone
         + Sync
         + GeoMessage
-        + JSONMessage
+        + JSONMessageDeserialize
         + Debug
         + WithNeighborhood,
 {
@@ -209,57 +211,95 @@ where
 
         messages.push(record);
 
+        println!("messages.len(): {}", messages.len());
+
         let len = messages.len();
         if len == args.chunk_size {
-            println!("Processing {len} messages");
-            let elab_time = std::time::Instant::now();
-
-            sampling_strategy.sample(sampling_percentage, &mut messages);
-            println!(
-                "Sampling done! (took {}ms)",
-                elab_time.elapsed().as_millis()
-            );
-
-            // save to csv according to neighborhood
-            let mut groups: HashMap<&String, Vec<&M>> = HashMap::new();
-            for message in messages.iter() {
-                let topic = match message.neighborhood().as_ref() {
-                    Some(neigh) => neighborhood_files.get(neigh),
-                    None => files.last(),
-                };
-
-                if let Some(topic) = topic {
-                    groups.entry(topic).or_default().push(message);
-                }
-            }
-
-            for (topic, msgs) in groups {
-                let filename = format!("{}.csv", topic);
-                let path = PathBuf::new().join(base_path).join(filename);
-                let file_exists = path.exists();
-
-                let file = OpenOptions::new().create(true).append(true).open(path)?;
-
-                let mut wtr = csv::WriterBuilder::new()
-                    .has_headers(!file_exists)
-                    .from_writer(file);
-
-                for msg in msgs {
-                    wtr.serialize(msg)?;
-                }
-                wtr.flush()?;
-            }
-
-            println!(
-                "{} messages stored! (took {}ms)",
-                messages.len(),
-                elab_time.elapsed().as_millis()
-            );
+            process(
+                sampling_strategy,
+                sampling_percentage,
+                &files,
+                &neighborhood_files,
+                &mut messages,
+                base_path,
+                len,
+            )?;
 
             messages.clear();
         }
     }
+    let len = messages.len();
+    process(
+        sampling_strategy,
+        sampling_percentage,
+        &files,
+        &neighborhood_files,
+        &mut messages,
+        base_path,
+        len,
+    )?;
 
+    Ok(())
+}
+
+fn process<M>(
+    sampling_strategy: crate::kafka_producer::strategies::SamplingStrategy,
+    sampling_percentage: f64,
+    files: &Vec<String>,
+    neighborhood_files: &HashMap<String, String>,
+    messages: &mut Vec<M>,
+    base_path: &Path,
+    len: usize,
+) -> Result<(), Box<dyn Error + 'static>>
+where
+    M: for<'de> serde::Deserialize<'de>
+        + serde::Serialize
+        + Clone
+        + Sync
+        + GeoMessage
+        + JSONMessageDeserialize
+        + Debug
+        + WithNeighborhood,
+{
+    println!("Processing {len} messages");
+    let elab_time = std::time::Instant::now();
+    sampling_strategy.sample(sampling_percentage, messages);
+    println!(
+        "Sampling done! (took {}ms)",
+        elab_time.elapsed().as_millis()
+    );
+    let mut groups: HashMap<&String, Vec<&M>> = HashMap::new();
+    for message in messages.iter() {
+        let topic = match message.neighborhood().as_ref() {
+            Some(neigh) => neighborhood_files.get(neigh),
+            None => files.last(),
+        };
+
+        if let Some(topic) = topic {
+            groups.entry(topic).or_default().push(message);
+        }
+    }
+    for (topic, msgs) in groups {
+        let filename = format!("{}.csv", topic);
+        let path = PathBuf::new().join(base_path).join(filename);
+        let file_exists = path.exists();
+
+        let file = OpenOptions::new().create(true).append(true).open(path)?;
+
+        let mut wtr = csv::WriterBuilder::new()
+            .has_headers(!file_exists)
+            .from_writer(file);
+
+        for msg in msgs {
+            wtr.serialize(msg)?;
+        }
+        wtr.flush()?;
+    }
+    println!(
+        "{} messages stored! (took {}ms)",
+        messages.len(),
+        elab_time.elapsed().as_millis()
+    );
     Ok(())
 }
 

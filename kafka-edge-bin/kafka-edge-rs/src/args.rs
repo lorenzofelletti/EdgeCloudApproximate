@@ -167,11 +167,11 @@ pub struct CSVProducer {
     #[arg(long, short = 'r', action = clap::ArgAction::SetTrue)]
     pub raw_json_messages: bool,
 
-    #[arg(long, short = 'l', default_value = "lat")]
-    pub lat_key: String,
+    #[arg(long, short = 'l', default_value_t = 1)]
+    pub lat_key: usize,
 
-    #[arg(long, short = 'g', default_value = "lon")]
-    pub lon_key: String,
+    #[arg(long, short = 'g', default_value_t = 2)]
+    pub lon_key: usize,
 
     #[arg(long, short = 'f')]
     /// Input CSV file that contains the data that would otherwise be read from Kafka.
