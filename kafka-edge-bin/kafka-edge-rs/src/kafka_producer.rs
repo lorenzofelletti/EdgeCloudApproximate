@@ -90,7 +90,8 @@ pub fn run_producer(config: Config, args: &CliArgs) -> Result<(), Box<dyn Error>
 
     let send_strategy = send_strategy_to_use(args, &config).ok_or("Unrecognized strategy")?;
 
-    let features: Vec<Feature> = read_neighborhoods(&config.data_out.neighborhoods_file)?;
+    let features: Vec<Feature> = read_neighborhoods(&config.data_out.neighborhoods_file)
+        .map_err(|e| format!("failed to read neighborhoods: {e}"))?;
 
     let topics = get_topics_names(&config, &features, send_strategy);
 

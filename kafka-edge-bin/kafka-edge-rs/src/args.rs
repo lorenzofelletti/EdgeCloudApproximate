@@ -160,10 +160,6 @@ pub struct CSVProducer {
     /// The sampling percentage; i.e. how many of the incoming messages to keep, in percentage
     pub sampling_percentage: f64,
 
-    #[arg(long)]
-    /// Override the strategy indicated in the TOML configuration file
-    pub override_send_strategy: Option<String>,
-
     #[arg()]
     /// Where to store the CSV files
     pub out_dir: String,
@@ -176,4 +172,15 @@ pub struct CSVProducer {
 
     #[arg(long, short = 'g', default_value = "lon")]
     pub lon_key: String,
+
+    #[arg(long, short = 'f')]
+    /// Input CSV file that contains the data that would otherwise be read from Kafka.
+    pub input_file: Option<String>,
+
+    #[arg(long, default_value_t = 10_000)]
+    /// Sampling chunk size. Only used when --input-file is provided.
+    pub chunk_size: usize,
+
+    #[arg(long, short = 'n')]
+    pub neighborhood_name_key: Option<String>,
 }

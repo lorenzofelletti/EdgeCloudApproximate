@@ -46,10 +46,17 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         },
         Some(args::Commands::CSVProducer(producer)) => {
-            if producer.raw_json_messages {
-                csv_producer::run_producer::<serde_json::Value>(config?, &producer)
-            } else {
-                csv_producer::run_producer::<Message>(config?, &producer)
+            match (producer.input_file.clone(), producer.raw_json_messages) {
+                (None, true) => csv_producer::run_producer::<
+                    serde_json::Map<String, serde_json::Value>,
+                >(config?, &producer),
+                (None, false) => csv_producer::run_producer::<Message>(config?, &producer),
+                (Some(_), true) => csv_producer::run_producer_from_file::<
+                    serde_json::Map<String, serde_json::Value>,
+                >(config?, &producer),
+                (Some(_), false) => {
+                    csv_producer::run_producer_from_file::<Message>(config?, &producer)
+                }
             }
         }
         None => run_producer(config?, &cli),

@@ -2,10 +2,12 @@ use std::{
     cell::Cell,
     collections::HashMap,
     error::Error,
-    fs::OpenOptions,
+    fmt::Debug,
+    fs::{File, OpenOptions},
     path::{Path, PathBuf},
 };
 
+use csv::ReaderBuilder;
 use geojson::Feature;
 use kafka::consumer::Consumer;
 
@@ -130,6 +132,135 @@ where
             start_time = std::time::Instant::now();
         }
     }
+}
+
+pub fn run_producer_from_file<M>(config: Config, args: &CSVProducer) -> Result<(), Box<dyn Error>>
+where
+    M: for<'de> serde::Deserialize<'de>
+        + serde::Serialize
+        + Clone
+        + Sync
+        + GeoMessage
+        + JSONMessage
+        + Debug
+        + WithNeighborhood,
+{
+    {
+        // sets the lat/lon keys
+        let mut key = LAT_KEY.write()?;
+        *key = args.lat_key.clone();
+        let mut key = LON_KEY.write()?;
+        *key = args.lat_key.clone();
+    }
+
+    if let Some(name) = args.neighborhood_name_key.as_ref() {
+        if !name.is_empty() {
+            crate::geospatial::set_neighborhood_name_key(name.clone());
+        }
+    }
+
+    let sampling_strategy = config.data_out.sampling_strategy;
+    let sampling_percentage = args.sampling_percentage;
+
+    let features: Vec<Feature> = read_neighborhoods(&config.data_out.neighborhoods_file)
+        .map_err(|e| format!("failed to read neighborhoods: {e}"))?;
+
+    let neighborhood_geohashes_map = get_geohashes_map_from_features(&features);
+    let geohash_neighborhood_map = invert_neighborhood_geohashes_map(&neighborhood_geohashes_map);
+
+    let files: Vec<_> =
+        get_topics_names_for_neigborhood_wise_strategy(&config.clone(), features.as_slice());
+
+    // map each neighborhood to a file name
+    let neighborhood_files: HashMap<_, String> = neighborhood_geohashes_map
+        .keys()
+        .zip(files.iter())
+        .map(|(n, t)| (n.clone(), t.clone()))
+        .collect();
+
+    let file = File::open(PathBuf::from(args.input_file.as_ref().unwrap()))?;
+
+    let mut reader = ReaderBuilder::new().has_headers(true).from_reader(file);
+
+    let mut messages: Vec<M> = Vec::with_capacity(args.chunk_size);
+
+    let base_path = Path::new(&args.out_dir);
+
+    if !base_path.is_dir() {
+        return Err(format!(
+            "given path \"{}\" is not a directory",
+            base_path.to_string_lossy()
+        )
+        .into());
+    }
+
+    println!("Starting to process messages...");
+
+    for maybe_record in reader.records() {
+        let record = skip_fail!(maybe_record);
+        println!("record: {:?}", record);
+        let mut record: M = record.deserialize(None)?;
+        // set message's geohash and neighborhood
+        let gh = skip_fail!(record.geohash());
+        record.set_geohash(gh.clone());
+        if let Some(n) = geohash_neighborhood_map.get(&gh) {
+            record.set_neighborhood(n.clone());
+        }
+
+        messages.push(record);
+
+        let len = messages.len();
+        if len == args.chunk_size {
+            println!("Processing {len} messages");
+            let elab_time = std::time::Instant::now();
+
+            sampling_strategy.sample(sampling_percentage, &mut messages);
+            println!(
+                "Sampling done! (took {}ms)",
+                elab_time.elapsed().as_millis()
+            );
+
+            // save to csv according to neighborhood
+            let mut groups: HashMap<&String, Vec<&M>> = HashMap::new();
+            for message in messages.iter() {
+                let topic = match message.neighborhood().as_ref() {
+                    Some(neigh) => neighborhood_files.get(neigh),
+                    None => files.last(),
+                };
+
+                if let Some(topic) = topic {
+                    groups.entry(topic).or_default().push(message);
+                }
+            }
+
+            for (topic, msgs) in groups {
+                let filename = format!("{}.csv", topic);
+                let path = PathBuf::new().join(base_path).join(filename);
+                let file_exists = path.exists();
+
+                let file = OpenOptions::new().create(true).append(true).open(path)?;
+
+                let mut wtr = csv::WriterBuilder::new()
+                    .has_headers(!file_exists)
+                    .from_writer(file);
+
+                for msg in msgs {
+                    wtr.serialize(msg)?;
+                }
+                wtr.flush()?;
+            }
+
+            println!(
+                "{} messages stored! (took {}ms)",
+                messages.len(),
+                elab_time.elapsed().as_millis()
+            );
+
+            messages.clear();
+        }
+    }
+
+    Ok(())
 }
 
 /// Create a Kafka consumer from the given config.

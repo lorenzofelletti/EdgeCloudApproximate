@@ -115,7 +115,17 @@ impl GeoMessage for Value {
     }
 
     fn set_geohash(&mut self, geohash: String) {
-        *self.get_mut("geohash").unwrap() = json!(geohash);
+        match self {
+            Value::Object(map) => {
+                *map.get_mut("geohash").unwrap() = json!(geohash);
+            }
+            // _ => panic!("expected object value"),
+            Value::Null => panic!("I'm null"),
+            Value::Bool(_) => panic!("I'm a bool"),
+            Value::Number(number) => panic!("I'm a number"),
+            Value::String(s) => panic!("I'm a string: {s}"),
+            Value::Array(values) => panic!("I'm an array"),
+        }
     }
 }
 
@@ -131,6 +141,56 @@ impl WithNeighborhood for Value {
 }
 
 impl JSONMessage for Value {
+    fn json_serialize(&self) -> Value {
+        serde_json::to_value(self).unwrap_or(Value::Null)
+    }
+
+    fn json_deserialize(message: &[u8]) -> Result<Self, Error> {
+        serde_json::from_slice(message)
+    }
+}
+
+impl GeoMessage for serde_json::Map<String, Value> {
+    fn geohash(&self) -> Result<String, GeohashError> {
+        let minus_one = Number::from_f64(-1.0).unwrap();
+
+        let lat_key = LAT_KEY.read().unwrap().clone();
+        let lon_key = LON_KEY.read().unwrap().clone();
+        let lat = self
+            .get(&lat_key)
+            .unwrap_or(&Value::Null)
+            .as_number()
+            .unwrap_or(&minus_one)
+            .as_f64()
+            .unwrap_or(-1.0);
+        let lon = self
+            .get(&lon_key)
+            .unwrap_or(&Value::Null)
+            .as_number()
+            .unwrap_or(&minus_one)
+            .as_f64()
+            .unwrap_or(-1.0);
+
+        geohash::encode(Coord { x: lat, y: lon }, 6)
+    }
+
+    fn set_geohash(&mut self, geohash: String) {
+        *self.get_mut("geohash").unwrap() = json!(geohash);
+    }
+}
+
+impl WithNeighborhood for serde_json::Map<String, Value> {
+    fn set_neighborhood(&mut self, neighborhood: String) {
+        *self.get_mut("neighborhood").unwrap() = json!(neighborhood);
+    }
+
+    fn neighborhood(&self) -> Option<String> {
+        self.get("neighborhood")
+            .map(|n| n.as_str().unwrap_or_default().to_string())
+    }
+}
+
+impl JSONMessage for serde_json::Map<String, Value> {
     fn json_serialize(&self) -> Value {
         serde_json::to_value(self).unwrap_or(Value::Null)
     }
