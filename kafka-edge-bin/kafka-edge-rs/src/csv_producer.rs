@@ -33,7 +33,7 @@ where
         let mut key = LAT_KEY.write()?;
         *key = args.lat_key.clone();
         let mut key = LON_KEY.write()?;
-        *key = args.lat_key.clone();
+        *key = args.lon_key.clone();
     }
 
     let sampling_strategy = config.data_out.sampling_strategy;
@@ -151,9 +151,17 @@ where
         // sets the lat/lon keys
         let mut key = LAT_KEY.write()?;
         *key = args.lat_key.clone();
-        let mut key = LON_KEY.write()?;
-        *key = args.lat_key.clone();
     }
+
+    {
+        let mut key = LON_KEY.write()?;
+        *key = args.lon_key.clone();
+    }
+
+    let latk = LAT_KEY.read()?;
+    println!("LATKEY: {:?}", latk);
+    let lonk = LON_KEY.read()?;
+    println!("LONKEY: {:?}", lonk);
 
     if let Some(name) = args.neighborhood_name_key.as_ref() {
         if !name.is_empty() {
@@ -198,20 +206,30 @@ where
 
     println!("Starting to process messages...");
 
+    println!("neighborhood_geohashes_map: {:?}", neighborhood_files);
+    println!("map: {:?}", geohash_neighborhood_map);
+
     for maybe_record in reader.records() {
         let record = skip_fail!(maybe_record);
-        println!("record: {:?}", record);
+        // println!("record: {:?}", record);
         let mut record: M = record.deserialize(None)?;
+        // println!("gh: {}", record.geohash().unwrap_or_default());
         // set message's geohash and neighborhood
         let gh = skip_fail!(record.geohash());
+        println!("calculated geohash: {}", gh);
         record.set_geohash(gh.clone());
         if let Some(n) = geohash_neighborhood_map.get(&gh) {
+            println!("calculated neighborhood: {}", n);
             record.set_neighborhood(n.clone());
+            println!(
+                "retrieved neighborhood: {}",
+                record.neighborhood().unwrap_or_default()
+            );
         }
 
         messages.push(record);
 
-        println!("messages.len(): {}", messages.len());
+        // println!("messages.len(): {}", messages.len());
 
         let len = messages.len();
         if len == args.chunk_size {
@@ -287,7 +305,7 @@ where
         let file = OpenOptions::new().create(true).append(true).open(path)?;
 
         let mut wtr = csv::WriterBuilder::new()
-            .has_headers(!file_exists)
+            // .has_headers(!file_exists)
             .from_writer(file);
 
         for msg in msgs {

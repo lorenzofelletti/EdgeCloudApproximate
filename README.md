@@ -23,3 +23,10 @@ On the Kafka node, two programs runs:
 - `kafka-edge-rs` -- A Rust program that reads from the DATAIN topic and writes to one or more DATAOUT topics (depending on the configuration); simulating being an edge node.
 
 On the Edge1 node, runs the same `kafka-edge-rs` program as the Kafka node, but withouth the `kafka-producer-rs` program (required only on one node).
+
+---
+
+CSV run
+```shell
+cargo run -- csv -f ../data/china/mobility/guang.csv  -l 1 -g 2 out -r
+```
