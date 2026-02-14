@@ -1,10 +1,18 @@
-FROM rust:1-slim-trixie AS builder-producer
+FROM rust:1-slim-bookworm AS rust-builder
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libssl-dev \
+    pkg-config
+
+FROM rust-builder AS builder-producer
 
 WORKDIR /build
 COPY kafka-producer-rs .
+
 RUN cargo build --release
 
-FROM rust:1-slim-trixie AS builder-edge
+FROM rust-builder AS builder-edge
 
 WORKDIR /build
 COPY kafka-edge-bin .
@@ -17,7 +25,7 @@ USER root
 
 WORKDIR /
 
-RUN apt-get update. && apt-get install -y \
+RUN apt-get update && apt-get install -y \
     build-essential \
     libssl-dev \
     pkg-config \
@@ -27,7 +35,7 @@ RUN apt-get update. && apt-get install -y \
 
 # Build producer
 COPY --from=builder-producer /build/target/release/kafka-producer-rs /kafka-producer-rs
-RUN mv ./target/release/kafka-producer-rs /kafka-producer-rs
+
 # Copy config file
 COPY ./kafka-rs-configs/producer_config.toml /producer_config.toml
 

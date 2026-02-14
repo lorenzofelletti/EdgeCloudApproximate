@@ -16,6 +16,8 @@ services:
       - "5000:5000"
     volumes:
       - ./vol:/vol
+      - ./out-5:/csv-data
+      - ./out-agg:/csv-data-agg
   spark-worker:
     image: docker.io/bitnamilegacy/spark:3.3
     user: root
@@ -27,6 +29,8 @@ services:
       - SPARK_WORKER_CORES=4
     volumes:
       - ./vol:/vol
+      - ./out-5:/csv-data
+      - ./out-agg:/csv-data-agg
 
   # ----------------- #
   # Apache Kafka      #
