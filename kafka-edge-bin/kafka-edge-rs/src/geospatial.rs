@@ -8,7 +8,9 @@ use std::{
 static NEIGHBORHOOD_NAME_KEY: RwLock<String> = RwLock::new(String::new());
 
 pub fn set_neighborhood_name_key(key: String) {
-    *NEIGHBORHOOD_NAME_KEY.write().unwrap() = key;
+    *NEIGHBORHOOD_NAME_KEY
+        .write()
+        .expect("cannot set neighborhood name key") = key;
 }
 
 /// Read the neighborhoods from the geojson file.

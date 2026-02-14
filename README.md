@@ -29,4 +29,5 @@ On the Edge1 node, runs the same `kafka-edge-rs` program as the Kafka node, but 
 CSV run
 ```shell
 cargo run -- csv -f ../data/china/mobility/guang.csv  -l 1 -g 2 out -r
+cargo run -- csv -f ../data/us/mobility/chicago_eclipse_data_part_1.csv -l 4 -g 3 -r -n name out-3
 ```

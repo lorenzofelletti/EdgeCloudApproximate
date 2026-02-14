@@ -47,7 +47,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         },
         Some(args::Commands::CSVProducer(producer)) => {
             match (producer.input_file.clone(), producer.raw_json_messages) {
-                (None, true) => csv_producer::run_producer::<serde_json::Value>(config?, &producer),
+                (None, true) => {
+                    csv_producer::run_producer::<Vec<serde_json::Value>>(config?, &producer)
+                }
                 (None, false) => csv_producer::run_producer::<Message>(config?, &producer),
                 (Some(_), true) => csv_producer::run_producer_from_file::<Vec<serde_json::Value>>(
                     config?, &producer,

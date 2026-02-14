@@ -146,11 +146,6 @@ where
     LAT_KEY.set(args.lat_key.clone()).expect("cannot set lat");
     LON_KEY.set(args.lon_key.clone()).expect("cannot set lon");
 
-    let latk = LAT_KEY.get().unwrap();
-    println!("LATKEY: {:?}", latk);
-    let lonk = LON_KEY.get().unwrap();
-    println!("LONKEY: {:?}", lonk);
-
     if let Some(name) = args.neighborhood_name_key.as_ref() {
         if !name.is_empty() {
             crate::geospatial::set_neighborhood_name_key(name.clone());
@@ -168,6 +163,7 @@ where
 
     let files: Vec<_> =
         get_topics_names_for_neigborhood_wise_strategy(&config.clone(), features.as_slice());
+    let neigh_not_found_file = files.last().unwrap();
 
     // map each neighborhood to a file name
     let neighborhood_files: HashMap<_, String> = neighborhood_geohashes_map
@@ -179,6 +175,10 @@ where
     let file = File::open(PathBuf::from(args.input_file.as_ref().unwrap()))?;
 
     let mut reader = ReaderBuilder::new().has_headers(true).from_reader(file);
+
+    // read and amend headers
+    let headers = reader.headers().expect("cannot read headers");
+    let headers = out_headers(headers)?;
 
     let mut messages: Vec<M> = Vec::with_capacity(args.chunk_size);
 
@@ -194,9 +194,6 @@ where
 
     println!("Starting to process messages...");
 
-    println!("neighborhood_geohashes_map: {:?}", neighborhood_files);
-    println!("map: {:?}", geohash_neighborhood_map);
-
     for maybe_record in reader.records() {
         let record = skip_fail!(maybe_record);
         // println!("record: {:?}", record);
@@ -204,15 +201,15 @@ where
         // println!("gh: {}", record.geohash().unwrap_or_default());
         // set message's geohash and neighborhood
         let gh = skip_fail!(record.geohash());
-        println!("calculated geohash: {}", gh);
+        // println!("calculated geohash: {}", gh);
         record.set_geohash(gh.clone());
         if let Some(n) = geohash_neighborhood_map.get(&gh) {
-            println!("calculated neighborhood: {}", n);
+            // println!("calculated neighborhood: {}", n);
             record.set_neighborhood(n.clone());
-            println!(
-                "retrieved neighborhood: {}",
-                record.neighborhood().unwrap_or_default()
-            );
+            // println!(
+            //     "retrieved neighborhood: {}",
+            //     record.neighborhood().unwrap_or_default()
+            // );
         }
 
         messages.push(record);
@@ -224,11 +221,12 @@ where
             process(
                 sampling_strategy,
                 sampling_percentage,
-                &files,
+                neigh_not_found_file,
                 &neighborhood_files,
                 &mut messages,
                 base_path,
                 len,
+                headers.clone(),
             )?;
 
             messages.clear();
@@ -238,24 +236,37 @@ where
     process(
         sampling_strategy,
         sampling_percentage,
-        &files,
+        neigh_not_found_file,
         &neighborhood_files,
         &mut messages,
         base_path,
         len,
+        headers,
     )?;
 
     Ok(())
 }
 
-fn process<M>(
+fn out_headers(
+    headers: &csv::StringRecord,
+) -> Result<Vec<serde_json::Value>, Box<dyn Error + 'static>> {
+    let mut headers: Vec<serde_json::Value> = headers.deserialize(None)?;
+    headers.append(&mut vec![
+        serde_json::Value::String("geohash".to_owned()),
+        serde_json::Value::String("neighborhood".to_owned()),
+    ]);
+    Ok(headers)
+}
+
+fn process<M, S>(
     sampling_strategy: crate::kafka_producer::strategies::SamplingStrategy,
     sampling_percentage: f64,
-    files: &Vec<String>,
+    neigh_not_found_file: S,
     neighborhood_files: &HashMap<String, String>,
     messages: &mut Vec<M>,
     base_path: &Path,
     len: usize,
+    headers: Vec<serde_json::Value>,
 ) -> Result<(), Box<dyn Error + 'static>>
 where
     M: for<'de> serde::Deserialize<'de>
@@ -266,6 +277,7 @@ where
         + JSONMessageDeserialize
         + Debug
         + WithNeighborhood,
+    S: AsRef<str>,
 {
     println!("Processing {len} messages");
     let elab_time = std::time::Instant::now();
@@ -275,14 +287,22 @@ where
         elab_time.elapsed().as_millis()
     );
     let mut groups: HashMap<&String, Vec<&M>> = HashMap::new();
+
+    let neigh_not_found_file = neigh_not_found_file.as_ref().to_owned();
+
     for message in messages.iter() {
         let topic = match message.neighborhood().as_ref() {
             Some(neigh) => neighborhood_files.get(neigh),
-            None => files.last(),
+            None => Some(&neigh_not_found_file),
         };
 
         if let Some(topic) = topic {
             groups.entry(topic).or_default().push(message);
+        } else {
+            groups
+                .entry(&neigh_not_found_file)
+                .or_default()
+                .push(message);
         }
     }
     for (topic, msgs) in groups {
@@ -292,9 +312,12 @@ where
 
         let file = OpenOptions::new().create(true).append(true).open(path)?;
 
-        let mut wtr = csv::WriterBuilder::new()
-            // .has_headers(!file_exists)
-            .from_writer(file);
+        let mut wtr = csv::WriterBuilder::new().from_writer(file);
+
+        if !file_exists {
+            // write the headers
+            wtr.serialize(headers.clone())?;
+        }
 
         for msg in msgs {
             wtr.serialize(msg)?;
