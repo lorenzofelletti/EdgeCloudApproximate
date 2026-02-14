@@ -196,12 +196,9 @@ where
 
     for maybe_record in reader.records() {
         let record = skip_fail!(maybe_record);
-        // println!("record: {:?}", record);
         let mut record: M = record.deserialize(None)?;
-        // println!("gh: {}", record.geohash().unwrap_or_default());
-        // set message's geohash and neighborhood
+
         let gh = skip_fail!(record.geohash());
-        // println!("calculated geohash: {}", gh);
         record.set_geohash(gh.clone());
         record.set_neighborhood(
             geohash_neighborhood_map
@@ -209,18 +206,8 @@ where
                 .unwrap_or(&String::new())
                 .clone(),
         );
-        // if let Some(n) = geohash_neighborhood_map.get(&gh) {
-        //     // println!("calculated neighborhood: {}", n);
-        //     record.set_neighborhood(n.clone());
-        //     // println!(
-        //     //     "retrieved neighborhood: {}",
-        //     //     record.neighborhood().unwrap_or_default()
-        //     // );
-        // }
 
         messages.push(record);
-
-        // println!("messages.len(): {}", messages.len());
 
         let len = messages.len();
         if len == args.chunk_size {
