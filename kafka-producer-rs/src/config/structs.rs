@@ -15,9 +15,6 @@ pub struct Data {
     pub msg_sleep_in_ms: Duration,
     pub chunk_size: NonZeroU64,
     pub chunk_sleep_in_ms: Duration,
-
-    pub message_type: crate::kafka_producer::message::MessageType,
-    pub key: Option<String>,
 }
 
 #[derive(Debug, Clone)]

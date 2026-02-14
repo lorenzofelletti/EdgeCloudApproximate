@@ -7,22 +7,17 @@ use std::{
 
 use csv::ReaderBuilder;
 use kafka::producer::{Producer, Record, RequiredAcks};
-use lazy_static::lazy_static;
-use serde::Deserialize;
 
-use crate::{args::CliArgs, config::structs::Config, kafka_producer::message::KafkaMessage};
+use crate::{args::CliArgs, config::structs::Config};
+
+use self::message::Message;
 
 pub mod message;
 
-lazy_static! {}
-
 /// Produces Kafka messages on the topic indicated in the configuration at a specified rate,
 /// also indicated in the configuration.
-/// The function does not take care of the topic's creation, it assumes it is already there.
-pub fn run_kafka_producer<KM>(config: Config, _cli: &CliArgs) -> Result<(), Box<dyn Error>>
-where
-    KM: KafkaMessage + for<'a> Deserialize<'a>,
-{
+/// The function does not take care of the topic's creation, thus assumes it is already.
+pub fn run_kafka_producer(config: Config, _cli: &CliArgs) -> Result<(), Box<dyn Error>> {
     let mut producer = Producer::from_hosts(config.kafka.brokers)
         .with_ack_timeout(Duration::from_secs(1))
         .with_required_acks(RequiredAcks::One)
@@ -41,11 +36,11 @@ where
     let mut partition = 0;
     for result in reader.records() {
         let record = result?;
-        let data: KM = record.deserialize(None)?;
-        let key = data.key();
+        let data: Message = record.deserialize(None)?;
         let data_json = data.json_serialize();
-        let record = Record::from_key_value(&config.kafka.topic[..], key, data_json.to_string())
-            .with_partition(partition);
+        let record =
+            Record::from_key_value(&config.kafka.topic[..], data.id, data_json.to_string())
+                .with_partition(partition);
         chunk.push(record);
 
         if chunk.len() == chunk_size {
