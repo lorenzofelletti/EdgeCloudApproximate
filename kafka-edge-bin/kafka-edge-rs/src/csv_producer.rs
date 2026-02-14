@@ -203,14 +203,20 @@ where
         let gh = skip_fail!(record.geohash());
         // println!("calculated geohash: {}", gh);
         record.set_geohash(gh.clone());
-        if let Some(n) = geohash_neighborhood_map.get(&gh) {
-            // println!("calculated neighborhood: {}", n);
-            record.set_neighborhood(n.clone());
-            // println!(
-            //     "retrieved neighborhood: {}",
-            //     record.neighborhood().unwrap_or_default()
-            // );
-        }
+        record.set_neighborhood(
+            geohash_neighborhood_map
+                .get(&gh)
+                .unwrap_or(&String::new())
+                .clone(),
+        );
+        // if let Some(n) = geohash_neighborhood_map.get(&gh) {
+        //     // println!("calculated neighborhood: {}", n);
+        //     record.set_neighborhood(n.clone());
+        //     // println!(
+        //     //     "retrieved neighborhood: {}",
+        //     //     record.neighborhood().unwrap_or_default()
+        //     // );
+        // }
 
         messages.push(record);
 

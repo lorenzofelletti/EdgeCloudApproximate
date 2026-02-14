@@ -8,11 +8,6 @@ use serde_json::{json, Error, Number, Value};
 pub static LAT_KEY: OnceLock<usize> = OnceLock::new();
 pub static LON_KEY: OnceLock<usize> = OnceLock::new();
 
-// lazy_static! {
-//     pub static ref LAT_KEY: RwLock<usize> = RwLock::new(1);
-//     pub static ref LON_KEY: RwLock<usize> = RwLock::new(2);
-// }
-
 pub trait GeoMessage {
     fn geohash(&self) -> Result<String, GeohashError>;
     fn set_geohash(&mut self, geohash: String);
@@ -128,9 +123,8 @@ impl GeoMessage for Vec<Value> {
             .as_f64()
             .unwrap_or(-1.0);
 
-        // println!("lat: {}", lat);
-        // println!("lon: {}", lon);
-
+        // WARNING! x should be long and y lat (just invert the coordinates on the program call)
+        // TODO: fix coordinate encoding
         geohash::encode(Coord { x: lat, y: lon }, 6)
     }
 
