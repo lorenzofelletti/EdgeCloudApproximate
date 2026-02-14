@@ -28,13 +28,8 @@ pub fn run_producer<M>(config: Config, args: &CSVProducer) -> Result<(), Box<dyn
 where
     M: serde::Serialize + Clone + Sync + GeoMessage + JSONMessage + WithNeighborhood,
 {
-    {
-        // sets the lat/lon keys
-        let mut key = LAT_KEY.write()?;
-        *key = args.lat_key.clone();
-        let mut key = LON_KEY.write()?;
-        *key = args.lon_key.clone();
-    }
+    LAT_KEY.set(args.lat_key.clone()).expect("cannot set lat");
+    LON_KEY.set(args.lon_key.clone()).expect("cannot set lon");
 
     let sampling_strategy = config.data_out.sampling_strategy;
     let sampling_percentage = args.sampling_percentage;
@@ -147,20 +142,13 @@ where
         + Debug
         + WithNeighborhood,
 {
-    {
-        // sets the lat/lon keys
-        let mut key = LAT_KEY.write()?;
-        *key = args.lat_key.clone();
-    }
+    // sets the lat/lon keys
+    LAT_KEY.set(args.lat_key.clone()).expect("cannot set lat");
+    LON_KEY.set(args.lon_key.clone()).expect("cannot set lon");
 
-    {
-        let mut key = LON_KEY.write()?;
-        *key = args.lon_key.clone();
-    }
-
-    let latk = LAT_KEY.read()?;
+    let latk = LAT_KEY.get().unwrap();
     println!("LATKEY: {:?}", latk);
-    let lonk = LON_KEY.read()?;
+    let lonk = LON_KEY.get().unwrap();
     println!("LONKEY: {:?}", lonk);
 
     if let Some(name) = args.neighborhood_name_key.as_ref() {

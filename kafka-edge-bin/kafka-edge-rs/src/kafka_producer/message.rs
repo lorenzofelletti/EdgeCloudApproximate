@@ -1,12 +1,18 @@
-use std::sync::RwLock;
+use std::sync::{OnceLock, RwLock};
 
 use geohash::{Coord, GeohashError};
 
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Error, Number, Value};
 
-pub static LAT_KEY: RwLock<usize> = RwLock::new(1);
-pub static LON_KEY: RwLock<usize> = RwLock::new(2);
+pub static LAT_KEY: OnceLock<usize> = OnceLock::new();
+pub static LON_KEY: OnceLock<usize> = OnceLock::new();
+
+// lazy_static! {
+//     pub static ref LAT_KEY: RwLock<usize> = RwLock::new(1);
+//     pub static ref LON_KEY: RwLock<usize> = RwLock::new(2);
+// }
 
 pub trait GeoMessage {
     fn geohash(&self) -> Result<String, GeohashError>;
@@ -106,8 +112,8 @@ impl GeoMessage for Value {
     fn geohash(&self) -> Result<String, GeohashError> {
         let minus_one = Number::from_f64(-1.0).unwrap();
 
-        let lat_key = LAT_KEY.read().unwrap().clone();
-        let lon_key = LON_KEY.read().unwrap().clone();
+        let lat_key = LAT_KEY.get().unwrap().clone();
+        let lon_key = LON_KEY.get().unwrap().clone();
         let lat = self
             .get(lat_key)
             .unwrap_or(&Value::Null)
@@ -221,8 +227,8 @@ impl GeoMessage for Vec<Value> {
     fn geohash(&self) -> Result<String, GeohashError> {
         let minus_one = Number::from_f64(-1.0).unwrap();
 
-        let lat_key = LAT_KEY.read().unwrap().clone();
-        let lon_key = LON_KEY.read().unwrap().clone();
+        let lat_key = 1; // LAT_KEY.get().unwrap().clone();
+        let lon_key = 2; //LON_KEY.get().unwrap().clone();
         let lat = self
             .get(lat_key)
             .unwrap_or(&Value::Null)
@@ -237,6 +243,9 @@ impl GeoMessage for Vec<Value> {
             .unwrap_or(&minus_one)
             .as_f64()
             .unwrap_or(-1.0);
+
+        println!("lat: {}", lat);
+        println!("lon: {}", lon);
 
         geohash::encode(Coord { x: lat, y: lon }, 6)
     }
