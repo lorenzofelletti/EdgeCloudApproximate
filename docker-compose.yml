@@ -17,6 +17,7 @@ services:
       - "5000:5000"
     volumes:
       - ./vol:/vol
+      - ./data:/data
       - ./out-5:/csv-data
       - ./out-agg:/csv-data-agg
       - ./cloud_analytics:/cloud_analytics
