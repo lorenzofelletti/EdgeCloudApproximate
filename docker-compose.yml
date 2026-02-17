@@ -10,6 +10,7 @@ services:
     environment:
       - SPARK_MODE=master
     ports:
+      - "8888:8888"
       - "8080:8080"
       - "4040:4040"
       - "7077:7077"
@@ -18,6 +19,9 @@ services:
       - ./vol:/vol
       - ./out-5:/csv-data
       - ./out-agg:/csv-data-agg
+      - ./cloud_analytics:/cloud_analytics
+      - ./docker-startup-scripts/startup-spark.sh:/startup.sh
+      - ./docker-startup-scripts/jupyter-start.sh:/jupyter-start.sh
   spark-worker:
     image: docker.io/bitnamilegacy/spark:3.3
     user: root
