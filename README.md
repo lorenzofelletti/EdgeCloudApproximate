@@ -31,3 +31,12 @@ CSV run
 cargo run -- csv -f ../data/china/mobility/guang.csv  -l 1 -g 2 out -r
 cargo run -- csv -f ../data/us/mobility/chicago_eclipse_data_part_1.csv -l 4 -g 3 -r -n name out-3
 ```
+
+---
+## Misc Notes
+
+aggregate csvs:
+```
+head -n 1 dataout_6.csv > combined.out && tail -n+2 -q *.csv >> combined.out
+mv combined.out combined.csv
+```
