@@ -109,16 +109,16 @@ pub fn get_geohashes_map_from_features(features: &Vec<Feature>) -> HashMap<Strin
     for feature in features {
         let geometry = Geometry::try_from(&feature.geometry.clone().unwrap()).unwrap();
         let covering_geohashes = covering(&geometry, 6);
-        geohashes_map.insert(
-            feature
-                .properties
-                .clone()
-                .unwrap()
-                .get(&key)
-                .unwrap()
-                .to_string(),
-            covering_geohashes,
-        );
+        let neigh = feature
+            .properties
+            .clone()
+            .unwrap()
+            .get(&key)
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .to_string();
+        geohashes_map.insert(neigh, covering_geohashes);
     }
     geohashes_map
 }
