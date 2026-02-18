@@ -36,6 +36,10 @@ pub enum Commands {
     #[command(name = "geojson")]
     /// GeoJSON related commands
     Geojson(Geojson),
+
+    #[command(name = "csv")]
+    /// Reads from Kafka, but stores the results on 1-N CSV files.
+    CSVProducer(CSVProducer),
 }
 
 #[derive(Args)]
@@ -148,4 +152,35 @@ pub struct Neighborhoods {
     #[arg(long, default_value = "name")]
     /// name of the property containing the neighborhood name.
     pub name_property: Option<String>,
+}
+
+#[derive(Args)]
+pub struct CSVProducer {
+    #[arg(short, long, default_value_t = 0.5)]
+    /// The sampling percentage; i.e. how many of the incoming messages to keep, in percentage
+    pub sampling_percentage: f64,
+
+    #[arg()]
+    /// Where to store the CSV files
+    pub out_dir: String,
+
+    #[arg(long, short = 'r', action = clap::ArgAction::SetTrue)]
+    pub raw_json_messages: bool,
+
+    #[arg(long, short = 'l', default_value_t = 1)]
+    pub lat_key: usize,
+
+    #[arg(long, short = 'g', default_value_t = 2)]
+    pub lon_key: usize,
+
+    #[arg(long, short = 'f')]
+    /// Input CSV file that contains the data that would otherwise be read from Kafka.
+    pub input_file: Option<String>,
+
+    #[arg(long, default_value_t = 10_000)]
+    /// Sampling chunk size. Only used when --input-file is provided.
+    pub chunk_size: usize,
+
+    #[arg(long, short = 'n')]
+    pub neighborhood_name_key: Option<String>,
 }

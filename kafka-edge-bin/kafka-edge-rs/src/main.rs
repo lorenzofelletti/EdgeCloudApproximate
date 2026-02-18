@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use args::{CliArgs, EditConfigCommands, TopicCommands};
 use clap::Parser;
 use config::load_config;
@@ -7,16 +9,17 @@ use subcommands::{
     topic::{topic_create, topic_delete},
 };
 
-use crate::subcommands::geojson::show_neighborhoods;
+use crate::{kafka_producer::message::Message, subcommands::geojson::show_neighborhoods};
 
 mod args;
 mod config;
+mod csv_producer;
 mod geospatial;
 mod kafka_producer;
 mod subcommands;
 mod utils;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
 
     let config = load_config();
@@ -42,6 +45,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 show_neighborhoods(config, neighborhoods)
             }
         },
+        Some(args::Commands::CSVProducer(producer)) => {
+            match (producer.input_file.clone(), producer.raw_json_messages) {
+                (None, true) => {
+                    csv_producer::run_producer::<Vec<serde_json::Value>>(config?, &producer)
+                }
+                (None, false) => csv_producer::run_producer::<Message>(config?, &producer),
+                (Some(_), true) => csv_producer::run_producer_from_file::<Vec<serde_json::Value>>(
+                    config?, &producer,
+                ),
+                (Some(_), false) => {
+                    csv_producer::run_producer_from_file::<Message>(config?, &producer)
+                }
+            }
+        }
         None => run_producer(config?, &cli),
     }
 }

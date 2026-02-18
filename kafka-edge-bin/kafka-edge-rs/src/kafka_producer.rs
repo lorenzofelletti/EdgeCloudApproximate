@@ -5,7 +5,6 @@ use kafka::{
     consumer::Consumer,
     producer::{Producer, RequiredAcks},
 };
-use log::warn;
 
 use crate::{
     args::CliArgs,
@@ -13,6 +12,7 @@ use crate::{
     geospatial::{
         get_geohashes_map_from_features, invert_neighborhood_geohashes_map, read_neighborhoods,
     },
+    kafka_producer::message::{GeoMessage as _, JSONMessageDeserialize},
     skip_fail,
     utils::get_topics_names_for_neigborhood_wise_strategy,
 };
@@ -90,7 +90,8 @@ pub fn run_producer(config: Config, args: &CliArgs) -> Result<(), Box<dyn Error>
 
     let send_strategy = send_strategy_to_use(args, &config).ok_or("Unrecognized strategy")?;
 
-    let features: Vec<Feature> = read_neighborhoods(&config.data_out.neighborhoods_file)?;
+    let features: Vec<Feature> = read_neighborhoods(&config.data_out.neighborhoods_file)
+        .map_err(|e| format!("failed to read neighborhoods: {e}"))?;
 
     let topics = get_topics_names(&config, &features, send_strategy);
 

@@ -1,23 +1,18 @@
-FROM docker.io/bitnami/spark:3.3
+FROM docker.io/bitnamilegacy/spark:3.3
 
 USER root
 
 WORKDIR /
 
-RUN apt-get update
-RUN apt-get install -y \
+RUN apt-get update && \
+    apt-get install -y \
     build-essential \
     libssl-dev \
     pkg-config \
     git \
     vim \
-    curl
-
-## Update new packages
-RUN apt-get update
-
-COPY data/china /data/china
-COPY cloud_analytics /cloud_analytics
+    curl && \
+    pip install notebook
 
 # Setup flask web app
 COPY flask_data_viz /flask_data_viz
@@ -25,6 +20,3 @@ WORKDIR /flask_data_viz
 RUN pip3 install -r requirements.txt
 
 WORKDIR /
-# Setup startup script
-COPY ./docker-startup-scripts/startup-spark.sh /startup.sh
-RUN chmod +x /startup.sh

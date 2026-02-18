@@ -5,7 +5,9 @@ use kafka::producer::{Producer, Record};
 use rand::{seq::IteratorRandom, Rng};
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
-use crate::{create_record, create_record_with_partition, either};
+use crate::{
+    create_record, create_record_with_partition, either, kafka_producer::message::GeoMessage,
+};
 
 use super::message::Message;
 
@@ -21,19 +23,18 @@ pub enum SendStrategy {
     ///
     /// # Notes
     /// ## How does this strategy work?
-    /// Note that this strategy will output data to `N` different topis, where
-    /// `N` is the number of neighborhoods read from the file, named in
-    /// ascending number (from 1). The topics names share the `taget_topic`
-    /// string set in the configuration TOML file as common prefix.
+    /// Note that this strategy will output data to `N` different topics, where
+    /// `N` is the number of neighborhoods read from the config GeoJSON file
+    /// The topics names share the `taget_topic` string set in the configuration
+    /// TOML file as common prefix.
     ///
     /// For example, if the config file contains `taget_topic = "dataout-"`,
-    /// the output topics will be named `dataout-1`, `dataout-1`, etc.
+    /// the output topics will be named `dataout-0`, `dataout-1`, etc.
     ///
     /// ## Are topics automatically created?
     /// No, the topics are not automatically created. You need to either create
-    /// them manualy beforhand, or run this program with
-    /// `topic create out --for-nbw-strat` a first time before running it to
-    /// send data.
+    /// them manualy beforehand, or run the subcommand
+    /// `topic create out --for-nbw-strat` before sending data.
     NeighborhoodWise,
 }
 
@@ -143,7 +144,10 @@ impl SamplingStrategy {
     ///
     /// # Notes
     /// The `messages` vector is modified in-place.
-    pub fn sample(&self, sampling_percentage: f64, messages: &mut Vec<Message>) {
+    pub fn sample<M>(&self, sampling_percentage: f64, messages: &mut Vec<M>)
+    where
+        M: Sized + Sync + Clone + GeoMessage,
+    {
         if sampling_percentage == 1.0 || messages.is_empty() {
             return;
         }
@@ -165,15 +169,14 @@ impl SamplingStrategy {
                  * sample is taken from each group. */
                 let total_size = messages.len();
                 let sample_size = total_size as f64 * sampling_percentage;
-                let mut groups: HashMap<&str, Vec<&Message>> = HashMap::new();
-                for message in messages as &[Message] {
-                    groups
-                        .entry(message.geohash.as_ref().unwrap())
-                        .or_insert_with(Vec::new)
-                        .push(message);
+                let mut groups: HashMap<String, Vec<&M>> = HashMap::new();
+                for message in messages as &[M] {
+                    let geohash = message.geohash().unwrap();
+
+                    groups.entry(geohash).or_insert_with(Vec::new).push(message);
                 }
 
-                let mut sample_sizes: HashMap<&str, usize> = HashMap::new();
+                let mut sample_sizes: HashMap<&String, usize> = HashMap::new();
                 for (geohash, group) in &groups {
                     if group.len() == 1 {
                         sample_sizes.insert(
@@ -186,7 +189,7 @@ impl SamplingStrategy {
                     }
                 }
 
-                let sampled_groups: Vec<Vec<&Message>> = groups
+                let sampled_groups: Vec<Vec<&M>> = groups
                     .par_iter()
                     .map(|(geohash, group)| {
                         group
@@ -205,6 +208,8 @@ impl SamplingStrategy {
 #[cfg(test)]
 mod tests {
     use geo::Coord;
+
+    use crate::kafka_producer::message::GeoMessage as _;
 
     use super::*;
 

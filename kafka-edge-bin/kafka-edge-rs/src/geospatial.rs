@@ -1,7 +1,17 @@
 use geo::algorithm::contains::Contains;
 use geo_types::{Coord, Geometry, LineString, Polygon};
 use geojson::{Feature, GeoJson};
-use std::{collections::HashMap, error::Error, fs::File, io::BufReader, path::PathBuf};
+use std::{
+    collections::HashMap, error::Error, fs::File, io::BufReader, path::PathBuf, sync::RwLock,
+};
+
+static NEIGHBORHOOD_NAME_KEY: RwLock<String> = RwLock::new(String::new());
+
+pub fn set_neighborhood_name_key(key: String) {
+    *NEIGHBORHOOD_NAME_KEY
+        .write()
+        .expect("cannot set neighborhood name key") = key;
+}
 
 /// Read the neighborhoods from the geojson file.
 ///
@@ -90,20 +100,25 @@ pub fn covering(geom: &Geometry<f64>, level: usize) -> Vec<String> {
 /// # Panics
 /// Panics if a feature has an invalid geometry.
 pub fn get_geohashes_map_from_features(features: &Vec<Feature>) -> HashMap<String, Vec<String>> {
+    let mut key = NEIGHBORHOOD_NAME_KEY.read().unwrap().clone();
+    if key.is_empty() {
+        key = "NAME".to_string();
+    }
+
     let mut geohashes_map: HashMap<String, Vec<String>> = HashMap::new();
     for feature in features {
         let geometry = Geometry::try_from(&feature.geometry.clone().unwrap()).unwrap();
         let covering_geohashes = covering(&geometry, 6);
-        geohashes_map.insert(
-            feature
-                .properties
-                .clone()
-                .unwrap()
-                .get("NAME")
-                .unwrap()
-                .to_string(),
-            covering_geohashes,
-        );
+        let neigh = feature
+            .properties
+            .clone()
+            .unwrap()
+            .get(&key)
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .to_string();
+        geohashes_map.insert(neigh, covering_geohashes);
     }
     geohashes_map
 }
